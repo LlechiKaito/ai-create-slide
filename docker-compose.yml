@@ -1,0 +1,20 @@
+services:
+  generate:
+    build: .
+    entrypoint: ["python", "generate_image.py"]
+    env_file:
+      - .env
+    volumes:
+      - ./output:/app/output
+
+  slides:
+    build: .
+    entrypoint: ["python", "create_slides.py"]
+    volumes:
+      - ./output:/app/output
+
+  pptx:
+    build: .
+    entrypoint: ["python", "create_pptx.py"]
+    volumes:
+      - ./output:/app/output
