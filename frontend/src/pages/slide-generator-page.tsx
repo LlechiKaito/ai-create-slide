@@ -9,6 +9,7 @@ export function SlideGeneratorPage() {
     loading,
     error,
     generatedContent,
+    previewImages,
     generateFromTheme,
     reviseContent,
     downloadPptx,
@@ -47,7 +48,10 @@ export function SlideGeneratorPage() {
 
         {step === "preview" && generatedContent && (
           <div className="space-y-6">
-            <SlidePreview content={generatedContent} />
+            <SlidePreview
+              content={generatedContent}
+              previewImages={previewImages}
+            />
             <RevisionForm
               onRevise={reviseContent}
               onDownload={downloadPptx}

@@ -53,3 +53,11 @@ class AiGenerateResponseDto(BaseModel):
 class AiReviseRequestDto(BaseModel):
     current_content: AiGenerateResponseDto
     revision_instruction: str = Field(..., min_length=1, max_length=MAX_CONTENT_LENGTH)
+
+
+class PreviewImagesRequestDto(BaseModel):
+    deck_title: str = Field(..., min_length=1, max_length=MAX_TITLE_LENGTH)
+    author: str = Field(default="", max_length=MAX_TITLE_LENGTH)
+    slides: list[AiSlideContentDto] = Field(
+        ..., min_length=1, max_length=MAX_SLIDES_PER_DECK
+    )

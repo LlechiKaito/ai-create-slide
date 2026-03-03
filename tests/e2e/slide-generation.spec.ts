@@ -1,5 +1,48 @@
 import { test, expect } from "@playwright/test";
 
+const MOCK_SLIDES_RESPONSE = {
+  is_success: true,
+  deck_title: "AIの未来と社会への影響",
+  author: "",
+  slides: [
+    {
+      title: "はじめに",
+      subtitle: "概要",
+      content: "AIの基本的な説明",
+      bullet_points: ["ポイント1", "ポイント2"],
+    },
+    {
+      title: "まとめ",
+      subtitle: "",
+      content: "結論",
+      bullet_points: [],
+    },
+  ],
+};
+
+const MOCK_SIMPLE_RESPONSE = {
+  is_success: true,
+  deck_title: "テスト",
+  author: "",
+  slides: [
+    { title: "S1", subtitle: "", content: "C1", bullet_points: [] },
+  ],
+};
+
+const MOCK_PREVIEW_IMAGES = {
+  images: ["iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="],
+};
+
+function mockPreviewImages(page: import("@playwright/test").Page) {
+  return page.route("**/api/slides/preview-images", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(MOCK_PREVIEW_IMAGES),
+    });
+  });
+}
+
 test.describe("AI Slide Generation Flow", () => {
   test("should display the AI slide generator page", async ({ page }) => {
     await page.goto("/");
@@ -49,21 +92,10 @@ test.describe("AI Slide Generation Flow", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({
-          is_success: true,
-          deck_title: "AIの未来",
-          author: "",
-          slides: [
-            {
-              title: "はじめに",
-              subtitle: "",
-              content: "概要",
-              bullet_points: [],
-            },
-          ],
-        }),
+        body: JSON.stringify(MOCK_SIMPLE_RESPONSE),
       });
     });
+    await mockPreviewImages(page);
 
     await page.click('[data-testid="ai-generate-button"]');
     await expect(
@@ -71,7 +103,7 @@ test.describe("AI Slide Generation Flow", () => {
     ).toContainText("AIが生成中");
   });
 
-  test("should show preview after AI generation", async ({ page }) => {
+  test("should show preview with images after AI generation", async ({ page }) => {
     await page.goto("/");
     await page.fill('[data-testid="theme-input"]', "AIの未来");
 
@@ -79,27 +111,10 @@ test.describe("AI Slide Generation Flow", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({
-          is_success: true,
-          deck_title: "AIの未来と社会への影響",
-          author: "",
-          slides: [
-            {
-              title: "はじめに",
-              subtitle: "概要",
-              content: "AIの基本的な説明",
-              bullet_points: ["ポイント1", "ポイント2"],
-            },
-            {
-              title: "まとめ",
-              subtitle: "",
-              content: "結論",
-              bullet_points: [],
-            },
-          ],
-        }),
+        body: JSON.stringify(MOCK_SLIDES_RESPONSE),
       });
     });
+    await mockPreviewImages(page);
 
     await page.click('[data-testid="ai-generate-button"]');
 
@@ -113,7 +128,7 @@ test.describe("AI Slide Generation Flow", () => {
       page.locator('[data-testid="preview-slide-0"]'),
     ).toBeVisible();
     await expect(
-      page.locator('[data-testid="preview-slide-1"]'),
+      page.locator('[data-testid="preview-slide-0"] img'),
     ).toBeVisible();
 
     await expect(
@@ -137,16 +152,10 @@ test.describe("AI Slide Generation Flow", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({
-          is_success: true,
-          deck_title: "テスト",
-          author: "",
-          slides: [
-            { title: "S1", subtitle: "", content: "C1", bullet_points: [] },
-          ],
-        }),
+        body: JSON.stringify(MOCK_SIMPLE_RESPONSE),
       });
     });
+    await mockPreviewImages(page);
 
     await page.click('[data-testid="ai-generate-button"]');
     await expect(
@@ -169,16 +178,10 @@ test.describe("AI Slide Generation Flow", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({
-          is_success: true,
-          deck_title: "テスト",
-          author: "",
-          slides: [
-            { title: "S1", subtitle: "", content: "C1", bullet_points: [] },
-          ],
-        }),
+        body: JSON.stringify(MOCK_SIMPLE_RESPONSE),
       });
     });
+    await mockPreviewImages(page);
 
     await page.click('[data-testid="ai-generate-button"]');
     await expect(

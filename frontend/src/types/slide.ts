@@ -37,3 +37,13 @@ export interface AiReviseRequest {
   };
   revision_instruction: string;
 }
+
+export interface PreviewImagesRequest {
+  deck_title: string;
+  author: string;
+  slides: AiSlideContent[];
+}
+
+export interface PreviewImagesResponse {
+  images: string[];
+}

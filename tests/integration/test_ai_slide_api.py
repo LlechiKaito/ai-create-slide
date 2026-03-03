@@ -141,3 +141,67 @@ async def test_should_return_422_when_num_slides_exceeds_max() -> None:
             json={"theme": "テスト", "num_slides": 100},
         )
     assert response.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_should_generate_preview_images() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/slides/preview-images",
+            json={
+                "deck_title": "テストプレゼン",
+                "author": "テスト太郎",
+                "slides": [
+                    {
+                        "title": "スライド1",
+                        "subtitle": "サブタイトル",
+                        "content": "本文",
+                        "bullet_points": ["箇条書き1"],
+                    },
+                    {
+                        "title": "スライド2",
+                        "subtitle": "",
+                        "content": "内容",
+                        "bullet_points": [],
+                    },
+                ],
+            },
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert "images" in data
+    assert len(data["images"]) == 3
+    for img in data["images"]:
+        assert isinstance(img, str)
+        assert len(img) > 0
+
+
+@pytest.mark.anyio
+async def test_should_return_422_when_preview_deck_title_empty() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/slides/preview-images",
+            json={
+                "deck_title": "",
+                "author": "",
+                "slides": [{"title": "S1"}],
+            },
+        )
+    assert response.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_should_return_422_when_preview_slides_empty() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/slides/preview-images",
+            json={
+                "deck_title": "テスト",
+                "author": "",
+                "slides": [],
+            },
+        )
+    assert response.status_code == 422

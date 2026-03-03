@@ -7,6 +7,8 @@ import type {
   AiGenerateResponse,
   AiReviseRequest,
   GenerateSlidesRequest,
+  PreviewImagesRequest,
+  PreviewImagesResponse,
 } from "@/types/slide";
 
 export const slideService = {
@@ -26,4 +28,9 @@ export const slideService = {
     data: AiReviseRequest,
   ): Promise<AxiosResponse<AiGenerateResponse>> =>
     apiClient.post(API_PATHS.AI_REVISE, data),
+
+  previewImages: (
+    data: PreviewImagesRequest,
+  ): Promise<AxiosResponse<PreviewImagesResponse>> =>
+    apiClient.post(API_PATHS.PREVIEW_IMAGES, data),
 };

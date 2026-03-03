@@ -13,10 +13,22 @@ interface UseAiSlideGeneratorReturn {
   loading: boolean;
   error: string;
   generatedContent: AiGenerateResponse | null;
+  previewImages: string[];
   generateFromTheme: (theme: string, numSlides: number) => Promise<void>;
   reviseContent: (instruction: string) => Promise<void>;
   downloadPptx: () => Promise<void>;
   resetToInput: () => void;
+}
+
+async function fetchPreviewImages(
+  content: AiGenerateResponse,
+): Promise<string[]> {
+  const response = await slideService.previewImages({
+    deck_title: content.deck_title,
+    author: content.author,
+    slides: content.slides,
+  });
+  return response.data.images;
 }
 
 export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
@@ -25,6 +37,7 @@ export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
   const [error, setError] = useState("");
   const [generatedContent, setGeneratedContent] =
     useState<AiGenerateResponse | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
 
   const generateFromTheme = async (
     theme: string,
@@ -38,7 +51,12 @@ export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
         theme,
         num_slides: numSlides,
       });
-      setGeneratedContent(response.data);
+      const content = response.data;
+      setGeneratedContent(content);
+
+      const images = await fetchPreviewImages(content);
+      setPreviewImages(images);
+
       setStep("preview");
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -62,7 +80,11 @@ export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
         current_content: generatedContent,
         revision_instruction: instruction,
       });
-      setGeneratedContent(response.data);
+      const content = response.data;
+      setGeneratedContent(content);
+
+      const images = await fetchPreviewImages(content);
+      setPreviewImages(images);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(ERROR_MESSAGES.AI_REVISE_FAILED);
@@ -118,6 +140,7 @@ export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
   const resetToInput = () => {
     setStep("input");
     setGeneratedContent(null);
+    setPreviewImages([]);
     setError("");
   };
 
@@ -126,6 +149,7 @@ export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
     loading,
     error,
     generatedContent,
+    previewImages,
     generateFromTheme,
     reviseContent,
     downloadPptx,

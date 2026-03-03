@@ -2,11 +2,15 @@ from backend.src.application.dto.slide.slide_dto import (
     AiGenerateRequestDto,
     AiReviseRequestDto,
     GenerateSlidesRequestDto,
+    PreviewImagesRequestDto,
 )
 from backend.src.application.usecases.slide.ai_generate_usecase import AiGenerateUseCase
 from backend.src.application.usecases.slide.ai_revise_usecase import AiReviseUseCase
 from backend.src.application.usecases.slide.generate_slide_usecase import (
     GenerateSlideUseCase,
+)
+from backend.src.application.usecases.slide.preview_images_usecase import (
+    PreviewImagesUseCase,
 )
 from backend.src.domain.commons.result import Result
 
@@ -17,10 +21,12 @@ class SlideApplicationService:
         generate_slide_usecase: GenerateSlideUseCase,
         ai_generate_usecase: AiGenerateUseCase,
         ai_revise_usecase: AiReviseUseCase,
+        preview_images_usecase: PreviewImagesUseCase,
     ) -> None:
         self._generate_slide_usecase = generate_slide_usecase
         self._ai_generate_usecase = ai_generate_usecase
         self._ai_revise_usecase = ai_revise_usecase
+        self._preview_images_usecase = preview_images_usecase
 
     def generate_slides(
         self, request: GenerateSlidesRequestDto
@@ -52,4 +58,14 @@ class SlideApplicationService:
         return self._ai_revise_usecase.execute(
             current_content=current_dict,
             revision_instruction=request.revision_instruction,
+        )
+
+    def preview_images(
+        self, request: PreviewImagesRequestDto
+    ) -> Result[list[bytes], Exception]:
+        slides_data = [s.model_dump() for s in request.slides]
+        return self._preview_images_usecase.execute(
+            deck_title=request.deck_title,
+            author=request.author,
+            slides=slides_data,
         )

@@ -1,3 +1,5 @@
+import base64
+
 from fastapi import Response
 
 from backend.src.application.dto.slide.slide_dto import (
@@ -5,6 +7,7 @@ from backend.src.application.dto.slide.slide_dto import (
     AiGenerateResponseDto,
     AiReviseRequestDto,
     GenerateSlidesRequestDto,
+    PreviewImagesRequestDto,
 )
 from backend.src.application.services.slide.slide_application_service import (
     SlideApplicationService,
@@ -48,3 +51,10 @@ class SlideController:
             "author": content.get("author", ""),
             "slides": content.get("slides", []),
         }
+
+    def preview_images(self, request: PreviewImagesRequestDto) -> dict:
+        result = self._slide_service.preview_images(request)
+        images_base64 = [
+            base64.b64encode(img).decode("utf-8") for img in result.data
+        ]
+        return {"images": images_base64}

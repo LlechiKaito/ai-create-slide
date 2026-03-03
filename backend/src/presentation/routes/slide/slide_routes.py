@@ -4,6 +4,7 @@ from backend.src.application.dto.slide.slide_dto import (
     AiGenerateRequestDto,
     AiReviseRequestDto,
     GenerateSlidesRequestDto,
+    PreviewImagesRequestDto,
 )
 from backend.src.container.container import get_slide_controller
 
@@ -25,5 +26,10 @@ def create_slide_router() -> APIRouter:
     def ai_revise(request: AiReviseRequestDto) -> dict:
         controller = get_slide_controller()
         return controller.ai_revise(request)
+
+    @router.post("/preview-images")
+    def preview_images(request: PreviewImagesRequestDto) -> dict:
+        controller = get_slide_controller()
+        return controller.preview_images(request)
 
     return router
