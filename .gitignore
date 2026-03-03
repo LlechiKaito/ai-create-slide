@@ -1,6 +1,7 @@
 # Environment variables
 .env
 .env.local
+frontend/.env
 
 # Dependencies
 node_modules/
@@ -10,3 +11,26 @@ output/
 
 # OS files
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+
+# Frontend build
+frontend/dist/
+
+# CDK
+infra/cdk.out/
+infra/*.js
+infra/*.d.ts
+
+# IDE
+.vscode/
+.idea/
+
+# Dev log
+dev-log/
