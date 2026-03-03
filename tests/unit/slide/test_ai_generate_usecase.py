@@ -15,9 +15,12 @@ MOCK_GENERATED_CONTENT = {
             "subtitle": "",
             "content": "AIの概要",
             "bullet_points": ["ポイント1", "ポイント2"],
+            "image_prompt": "A robot thinking about AI",
         },
     ],
 }
+
+MOCK_IMAGE_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
 
 
 class MockAiSlideRepository(AiSlideRepository):
@@ -34,6 +37,9 @@ class MockAiSlideRepository(AiSlideRepository):
     ) -> Result[dict, Exception]:
         return success(current_content)
 
+    def generate_image(self, prompt: str) -> Result[bytes, Exception]:
+        return success(MOCK_IMAGE_BYTES)
+
 
 class TestAiGenerateUseCase:
     def test_should_generate_content_successfully(self) -> None:
@@ -45,6 +51,7 @@ class TestAiGenerateUseCase:
         assert isinstance(result, Success)
         assert result.data["deck_title"] == "AIの未来"
         assert len(result.data["slides"]) == 1
+        assert result.data["slides"][0]["image_data"] != ""
 
     def test_should_raise_application_error_when_generation_fails(self) -> None:
         repository = MockAiSlideRepository(should_fail=True)
@@ -69,6 +76,9 @@ class TestAiGenerateUseCase:
                 self, current_content: dict, revision_instruction: str
             ) -> Result[dict, Exception]:
                 return success(current_content)
+
+            def generate_image(self, prompt: str) -> Result[bytes, Exception]:
+                return success(MOCK_IMAGE_BYTES)
 
         repository = CapturingRepository()
         usecase = AiGenerateUseCase(ai_repository=repository)

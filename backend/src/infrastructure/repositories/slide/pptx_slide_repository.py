@@ -1,3 +1,4 @@
+import base64
 import io
 
 from pptx import Presentation
@@ -12,6 +13,12 @@ from backend.src.constants.slide import (
     FONT_SIZE_MAIN_TITLE,
     FONT_SIZE_SUBTITLE,
     FONT_SIZE_TITLE,
+    PPTX_IMAGE_HEIGHT_INCHES,
+    PPTX_IMAGE_LEFT_INCHES,
+    PPTX_IMAGE_TOP_INCHES,
+    PPTX_IMAGE_WIDTH_INCHES,
+    PPTX_TEXT_WIDTH_DEFAULT_INCHES,
+    PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES,
     SLIDE_HEIGHT_INCHES,
     SLIDE_WIDTH_INCHES,
 )
@@ -111,39 +118,56 @@ class PptxSlideRepository(SlideRepository):
                 slide_deck.author, FONT_SIZE_TITLE, False, DARK, PP_ALIGN.CENTER,
             )
 
-    def _add_content_slide(self, prs: Presentation, slide_entity: Slide) -> None:
-        slide = prs.slides.add_slide(prs.slide_layouts[6])
-        self._set_slide_bg(slide)
-        self._add_accent_bar(slide, top=True, bottom=True)
+    def _add_image_to_slide(self, slide: object, image_data: str) -> None:
+        raw = base64.b64decode(image_data)
+        image_stream = io.BytesIO(raw)
+        slide.shapes.add_picture(  # type: ignore[attr-defined]
+            image_stream,
+            Inches(PPTX_IMAGE_LEFT_INCHES),
+            Inches(PPTX_IMAGE_TOP_INCHES),
+            Inches(PPTX_IMAGE_WIDTH_INCHES),
+            Inches(PPTX_IMAGE_HEIGHT_INCHES),
+        )
 
+    def _add_slide_header(self, slide: object, slide_entity: Slide) -> None:
         slide_w = Inches(SLIDE_WIDTH_INCHES)
-
         if slide_entity.subtitle:
             self._add_text_box(
                 slide, Inches(0), Inches(0.4), slide_w, Inches(0.4),
                 slide_entity.subtitle, FONT_SIZE_SUBTITLE, False, ORANGE, PP_ALIGN.CENTER,
             )
-
         self._add_text_box(
             slide, Inches(0), Inches(0.8), slide_w, Inches(0.7),
             slide_entity.title.value, FONT_SIZE_TITLE, True, DARK, PP_ALIGN.CENTER,
         )
-
         self._add_accent_line(slide, Inches(4.5), Inches(1.5), Inches(4.3))
 
+    def _add_slide_body(self, slide: object, slide_entity: Slide, text_w: Emu) -> None:
         content_y = Inches(2.0)
-
         if slide_entity.content.value:
             self._add_text_box(
-                slide, Inches(1.2), content_y, Inches(11), Inches(2.0),
+                slide, Inches(1.2), content_y, text_w, Inches(2.0),
                 slide_entity.content.value, FONT_SIZE_BODY, False, DARK,
             )
             content_y = Inches(3.5)
-
         if slide_entity.has_bullet_points():
             for i, point in enumerate(slide_entity.bullet_points):
                 y = content_y + Inches(i * 0.45)
                 self._add_text_box(
-                    slide, Inches(1.5), y, Inches(10), Inches(0.4),
+                    slide, Inches(1.5), y, text_w, Inches(0.4),
                     f"  {point}", FONT_SIZE_BODY, False, DARK,
                 )
+
+    def _add_content_slide(self, prs: Presentation, slide_entity: Slide) -> None:
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        self._set_slide_bg(slide)
+        self._add_accent_bar(slide, top=True, bottom=True)
+
+        has_image = bool(slide_entity.image_data)
+        text_w = Inches(PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES) if has_image else Inches(PPTX_TEXT_WIDTH_DEFAULT_INCHES)
+
+        self._add_slide_header(slide, slide_entity)
+        self._add_slide_body(slide, slide_entity, text_w)
+
+        if has_image and slide_entity.image_data:
+            self._add_image_to_slide(slide, slide_entity.image_data)

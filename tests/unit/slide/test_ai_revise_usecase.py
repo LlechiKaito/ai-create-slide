@@ -15,6 +15,7 @@ MOCK_CURRENT_CONTENT = {
             "subtitle": "",
             "content": "AIの概要",
             "bullet_points": ["ポイント1"],
+            "image_prompt": "A robot thinking",
         },
     ],
 }
@@ -28,9 +29,12 @@ MOCK_REVISED_CONTENT = {
             "subtitle": "改訂版",
             "content": "AIの概要（修正済み）",
             "bullet_points": ["ポイント1", "ポイント2"],
+            "image_prompt": "A robot learning from data",
         },
     ],
 }
+
+MOCK_IMAGE_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
 
 
 class MockAiSlideRepository(AiSlideRepository):
@@ -46,6 +50,9 @@ class MockAiSlideRepository(AiSlideRepository):
         if self._should_fail:
             return failure(Exception("AI revision failed"))
         return success(MOCK_REVISED_CONTENT)
+
+    def generate_image(self, prompt: str) -> Result[bytes, Exception]:
+        return success(MOCK_IMAGE_BYTES)
 
 
 class TestAiReviseUseCase:
@@ -87,6 +94,9 @@ class TestAiReviseUseCase:
                 self.captured_content = current_content
                 self.captured_instruction = revision_instruction
                 return success(MOCK_REVISED_CONTENT)
+
+            def generate_image(self, prompt: str) -> Result[bytes, Exception]:
+                return success(MOCK_IMAGE_BYTES)
 
         repository = CapturingRepository()
         usecase = AiReviseUseCase(ai_repository=repository)

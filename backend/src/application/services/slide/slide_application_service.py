@@ -37,6 +37,7 @@ class SlideApplicationService:
                 "subtitle": slide.subtitle,
                 "content": slide.content,
                 "bullet_points": slide.bullet_points,
+                "image_data": slide.image_data,
             }
             for slide in request.slides
         ]

@@ -6,6 +6,7 @@ export interface GenerateSlidesRequest {
     subtitle: string;
     content: string;
     bullet_points: string[];
+    image_data: string;
   }[];
 }
 
@@ -19,6 +20,8 @@ export interface AiSlideContent {
   subtitle: string;
   content: string;
   bullet_points: string[];
+  image_prompt: string;
+  image_data: string;
 }
 
 export interface AiGenerateResponse {

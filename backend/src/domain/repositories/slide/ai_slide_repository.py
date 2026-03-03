@@ -13,3 +13,7 @@ class AiSlideRepository(ABC):
         self, current_content: dict, revision_instruction: str
     ) -> Result[dict, Exception]:
         pass
+
+    @abstractmethod
+    def generate_image(self, prompt: str) -> Result[bytes, Exception]:
+        pass

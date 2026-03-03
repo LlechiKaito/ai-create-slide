@@ -15,6 +15,7 @@ class SlideRequestDto(BaseModel):
     bullet_points: list[str] = Field(
         default_factory=list, max_length=MAX_BULLET_POINTS_PER_SLIDE
     )
+    image_data: str = ""
 
 
 class GenerateSlidesRequestDto(BaseModel):
@@ -41,6 +42,8 @@ class AiSlideContentDto(BaseModel):
     subtitle: str = ""
     content: str = ""
     bullet_points: list[str] = Field(default_factory=list)
+    image_prompt: str = ""
+    image_data: str = ""
 
 
 class AiGenerateResponseDto(BaseModel):

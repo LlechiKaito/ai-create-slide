@@ -1,3 +1,4 @@
+import base64
 import io
 
 from PIL import Image, ImageDraw, ImageFont
@@ -37,6 +38,9 @@ FONT_PATH_REGULAR = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
 ACCENT_LINE_WIDTH = 3
 TITLE_ACCENT_LINE_WIDTH = 4
 ACCENT_LINE_LENGTH = 200
+IMAGE_SIZE = 400
+IMAGE_MARGIN = 80
+IMAGE_BORDER_RADIUS = 20
 
 
 def _get_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -110,6 +114,23 @@ def _image_to_bytes(img: Image.Image) -> bytes:
     return buf.getvalue()
 
 
+def _decode_and_place_image(base: Image.Image, image_data: str) -> None:
+    raw = base64.b64decode(image_data)
+    asset = Image.open(io.BytesIO(raw)).convert("RGBA")
+    asset = asset.resize((IMAGE_SIZE, IMAGE_SIZE), Image.LANCZOS)
+
+    mask = Image.new("L", (IMAGE_SIZE, IMAGE_SIZE), 0)
+    mask_draw = ImageDraw.Draw(mask)
+    mask_draw.rounded_rectangle(
+        [(0, 0), (IMAGE_SIZE, IMAGE_SIZE)],
+        radius=IMAGE_BORDER_RADIUS, fill=255,
+    )
+
+    x = PREVIEW_WIDTH - PREVIEW_MARGIN_X - IMAGE_SIZE
+    y = (PREVIEW_HEIGHT - IMAGE_SIZE) // 2
+    base.paste(asset, (x, y), mask)
+
+
 def _render_title_slide(deck_title: str, author: str) -> bytes:
     img, draw = _create_base()
 
@@ -163,13 +184,18 @@ def _draw_slide_header(draw: ImageDraw.Draw, slide: dict, index: int) -> int:
     return y + 20
 
 
-def _draw_slide_body(draw: ImageDraw.Draw, slide: dict, y: int) -> None:
-    max_w = PREVIEW_WIDTH - PREVIEW_MARGIN_X * 2
+def _draw_slide_body(
+    draw: ImageDraw.Draw, slide: dict, y: int, has_image: bool,
+) -> None:
+    text_area_w = PREVIEW_WIDTH - PREVIEW_MARGIN_X * 2
+    if has_image:
+        text_area_w = text_area_w - IMAGE_SIZE - IMAGE_MARGIN
+
     content = slide.get("content", "")
     if content:
         y = _draw_wrapped(
             draw, content, PREVIEW_MARGIN_X, y,
-            _get_font(PREVIEW_FONT_BODY), COLOR_DARK, max_width=max_w,
+            _get_font(PREVIEW_FONT_BODY), COLOR_DARK, max_width=text_area_w,
         )
         y += 30
 
@@ -183,15 +209,22 @@ def _draw_slide_body(draw: ImageDraw.Draw, slide: dict, y: int) -> None:
         y = _draw_wrapped(
             draw, bp, PREVIEW_MARGIN_X + PREVIEW_BULLET_INDENT, y,
             _get_font(PREVIEW_FONT_BULLET), COLOR_DARK,
-            max_width=max_w - PREVIEW_BULLET_INDENT,
+            max_width=text_area_w - PREVIEW_BULLET_INDENT,
         )
         y += 10
 
 
 def _render_content_slide(slide: dict, index: int) -> bytes:
     img, draw = _create_base()
+    image_data = slide.get("image_data", "")
+    has_image = bool(image_data)
+
     y = _draw_slide_header(draw, slide, index)
-    _draw_slide_body(draw, slide, y)
+    _draw_slide_body(draw, slide, y, has_image)
+
+    if has_image:
+        _decode_and_place_image(img, image_data)
+
     return _image_to_bytes(img)
 
 

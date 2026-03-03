@@ -111,6 +111,7 @@ export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
           subtitle: s.subtitle,
           content: s.content,
           bullet_points: s.bullet_points,
+          image_data: s.image_data || "",
         })),
       };
 

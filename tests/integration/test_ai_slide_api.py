@@ -6,6 +6,7 @@ from httpx import ASGITransport, AsyncClient
 from backend.src.domain.commons.result import Result, success
 from backend.src.main import app
 
+MOCK_IMAGE_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
 
 MOCK_GENERATED_CONTENT = {
     "deck_title": "AIの未来",
@@ -16,12 +17,14 @@ MOCK_GENERATED_CONTENT = {
             "subtitle": "",
             "content": "AIの概要",
             "bullet_points": ["ポイント1", "ポイント2"],
+            "image_prompt": "A robot thinking about AI",
         },
         {
             "title": "まとめ",
             "subtitle": "",
             "content": "結論",
             "bullet_points": [],
+            "image_prompt": "A summary chart",
         },
     ],
 }
@@ -35,6 +38,7 @@ MOCK_REVISED_CONTENT = {
             "subtitle": "改訂版",
             "content": "AIの概要（修正済み）",
             "bullet_points": ["ポイント1", "ポイント2", "ポイント3"],
+            "image_prompt": "A robot learning from data",
         },
     ],
 }
@@ -50,10 +54,18 @@ def mock_revise(
     return success(MOCK_REVISED_CONTENT)
 
 
+def mock_generate_image(self, prompt: str) -> Result[bytes, Exception]:
+    return success(MOCK_IMAGE_BYTES)
+
+
 @pytest.mark.anyio
 @patch(
     "backend.src.infrastructure.external.gemini_client.GeminiAiSlideRepository.generate_slide_content",
     mock_generate,
+)
+@patch(
+    "backend.src.infrastructure.external.gemini_client.GeminiAiSlideRepository.generate_image",
+    mock_generate_image,
 )
 async def test_should_ai_generate_slides() -> None:
     transport = ASGITransport(app=app)
@@ -73,6 +85,10 @@ async def test_should_ai_generate_slides() -> None:
 @patch(
     "backend.src.infrastructure.external.gemini_client.GeminiAiSlideRepository.revise_slide_content",
     mock_revise,
+)
+@patch(
+    "backend.src.infrastructure.external.gemini_client.GeminiAiSlideRepository.generate_image",
+    mock_generate_image,
 )
 async def test_should_ai_revise_slides() -> None:
     transport = ASGITransport(app=app)

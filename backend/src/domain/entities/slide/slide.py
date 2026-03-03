@@ -11,6 +11,7 @@ class Slide:
     content: SlideContent
     subtitle: Optional[str] = None
     bullet_points: tuple[str, ...] = ()
+    image_data: Optional[str] = None
 
     def has_bullet_points(self) -> bool:
         return len(self.bullet_points) > 0

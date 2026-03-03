@@ -10,12 +10,16 @@ const MOCK_SLIDES_RESPONSE = {
       subtitle: "概要",
       content: "AIの基本的な説明",
       bullet_points: ["ポイント1", "ポイント2"],
+      image_prompt: "A robot thinking about AI",
+      image_data: "",
     },
     {
       title: "まとめ",
       subtitle: "",
       content: "結論",
       bullet_points: [],
+      image_prompt: "A summary chart",
+      image_data: "",
     },
   ],
 };
@@ -25,7 +29,7 @@ const MOCK_SIMPLE_RESPONSE = {
   deck_title: "テスト",
   author: "",
   slides: [
-    { title: "S1", subtitle: "", content: "C1", bullet_points: [] },
+    { title: "S1", subtitle: "", content: "C1", bullet_points: [], image_prompt: "", image_data: "" },
   ],
 };
 
