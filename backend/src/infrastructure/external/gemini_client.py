@@ -123,16 +123,20 @@ class GeminiAiSlideRepository(AiSlideRepository):
         return success(parsed)
 
     def generate_image(self, prompt: str) -> Result[bytes, Exception]:
-        client = self._get_client()
-
-        response = client.models.generate_images(
-            model=IMAGEN_MODEL_NAME,
-            prompt=prompt,
-            config=types.GenerateImagesConfig(number_of_images=1),
-        )
+        try:
+            client = self._get_client()
+            response = client.models.generate_images(
+                model=IMAGEN_MODEL_NAME,
+                prompt=prompt,
+                config=types.GenerateImagesConfig(
+                    number_of_images=1,
+                    safety_filter_level="BLOCK_ONLY_HIGH",
+                ),
+            )
+        except Exception as e:
+            return failure(e)
 
         if not response.generated_images:
             return failure(Exception("No image generated"))
 
-        image_bytes = response.generated_images[0].image.image_bytes
-        return success(image_bytes)
+        return success(response.generated_images[0].image.image_bytes)
