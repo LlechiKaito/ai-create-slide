@@ -29,3 +29,27 @@ class GenerateSlidesResponseDto(BaseModel):
     is_success: bool
     message: str
     filename: str
+
+
+class AiGenerateRequestDto(BaseModel):
+    theme: str = Field(..., min_length=1, max_length=MAX_CONTENT_LENGTH)
+    num_slides: int = Field(default=5, ge=1, le=MAX_SLIDES_PER_DECK)
+
+
+class AiSlideContentDto(BaseModel):
+    title: str
+    subtitle: str = ""
+    content: str = ""
+    bullet_points: list[str] = Field(default_factory=list)
+
+
+class AiGenerateResponseDto(BaseModel):
+    is_success: bool
+    deck_title: str
+    author: str = ""
+    slides: list[AiSlideContentDto]
+
+
+class AiReviseRequestDto(BaseModel):
+    current_content: AiGenerateResponseDto
+    revision_instruction: str = Field(..., min_length=1, max_length=MAX_CONTENT_LENGTH)

@@ -1,8 +1,19 @@
-import { SlideForm } from "@/components/slide/slide-form";
-import { useSlideGenerator } from "@/hooks/use-slide-generator";
+import { RevisionForm } from "@/components/ai-slide/revision-form";
+import { SlidePreview } from "@/components/ai-slide/slide-preview";
+import { ThemeInputForm } from "@/components/ai-slide/theme-input-form";
+import { useAiSlideGenerator } from "@/hooks/use-ai-slide-generator";
 
 export function SlideGeneratorPage() {
-  const { loading, error, generateSlides } = useSlideGenerator();
+  const {
+    step,
+    loading,
+    error,
+    generatedContent,
+    generateFromTheme,
+    reviseContent,
+    downloadPptx,
+    resetToInput,
+  } = useAiSlideGenerator();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -12,7 +23,7 @@ export function SlideGeneratorPage() {
             <span className="text-orange-500">AI</span> Slide Generator
           </h1>
           <p className="text-sm text-gray-500">
-            フォームに入力してスライドを自動生成
+            テーマを入力するだけでAIがスライドを自動生成
           </p>
         </div>
       </header>
@@ -27,7 +38,24 @@ export function SlideGeneratorPage() {
           </div>
         )}
 
-        <SlideForm onGenerate={generateSlides} loading={loading} />
+        {step === "input" && (
+          <ThemeInputForm
+            onGenerate={generateFromTheme}
+            loading={loading}
+          />
+        )}
+
+        {step === "preview" && generatedContent && (
+          <div className="space-y-6">
+            <SlidePreview content={generatedContent} />
+            <RevisionForm
+              onRevise={reviseContent}
+              onDownload={downloadPptx}
+              onReset={resetToInput}
+              loading={loading}
+            />
+          </div>
+        )}
       </main>
     </div>
   );

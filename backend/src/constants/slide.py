@@ -16,3 +16,5 @@ FONT_SIZE_HEADING = 24
 FONT_SIZE_MAIN_TITLE = 48
 
 GENERATED_FILENAME = "generated_slides.pptx"
+
+GEMINI_MODEL_NAME = "gemini-2.5-flash"

@@ -1,6 +1,11 @@
 from fastapi import Response
 
-from backend.src.application.dto.slide.slide_dto import GenerateSlidesRequestDto
+from backend.src.application.dto.slide.slide_dto import (
+    AiGenerateRequestDto,
+    AiGenerateResponseDto,
+    AiReviseRequestDto,
+    GenerateSlidesRequestDto,
+)
 from backend.src.application.services.slide.slide_application_service import (
     SlideApplicationService,
 )
@@ -23,3 +28,23 @@ class SlideController:
                 "Content-Disposition": f'attachment; filename="{GENERATED_FILENAME}"'
             },
         )
+
+    def ai_generate(self, request: AiGenerateRequestDto) -> dict:
+        result = self._slide_service.ai_generate(request)
+        content = result.data
+        return {
+            "is_success": True,
+            "deck_title": content.get("deck_title", ""),
+            "author": content.get("author", ""),
+            "slides": content.get("slides", []),
+        }
+
+    def ai_revise(self, request: AiReviseRequestDto) -> dict:
+        result = self._slide_service.ai_revise(request)
+        content = result.data
+        return {
+            "is_success": True,
+            "deck_title": content.get("deck_title", ""),
+            "author": content.get("author", ""),
+            "slides": content.get("slides", []),
+        }

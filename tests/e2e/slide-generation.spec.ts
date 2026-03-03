@@ -1,100 +1,197 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Slide Generation Flow", () => {
-  test("should display the slide generator page", async ({ page }) => {
+test.describe("AI Slide Generation Flow", () => {
+  test("should display the AI slide generator page", async ({ page }) => {
     await page.goto("/");
     await expect(
       page.locator("text=AI Slide Generator"),
     ).toBeVisible();
     await expect(
-      page.locator('[data-testid="slide-form"]'),
+      page.locator('[data-testid="theme-input-form"]'),
     ).toBeVisible();
     await expect(
-      page.locator('[data-testid="deck-title"]'),
+      page.locator('[data-testid="theme-input"]'),
     ).toBeVisible();
   });
 
-  test("should show validation error when deck title is empty", async ({
+  test("should show validation error when theme is empty", async ({
     page,
   }) => {
     await page.goto("/");
-    await page.click('[data-testid="generate-button"]');
+    await page.click('[data-testid="ai-generate-button"]');
     await expect(
       page.locator('[data-testid="validation-error"]'),
     ).toBeVisible();
     await expect(
       page.locator('[data-testid="validation-error"]'),
-    ).toContainText("タイトルを入力");
+    ).toContainText("テーマを入力");
   });
 
-  test("should show validation error when slide title is empty", async ({
+  test("should have default slide count of 5", async ({ page }) => {
+    await page.goto("/");
+    const numSlidesInput = page.locator('[data-testid="num-slides-input"]');
+    await expect(numSlidesInput).toHaveValue("5");
+  });
+
+  test("should allow changing slide count", async ({ page }) => {
+    await page.goto("/");
+    const numSlidesInput = page.locator('[data-testid="num-slides-input"]');
+    await numSlidesInput.fill("10");
+    await expect(numSlidesInput).toHaveValue("10");
+  });
+
+  test("should show generating state when submitting", async ({ page }) => {
+    await page.goto("/");
+    await page.fill('[data-testid="theme-input"]', "AIの未来");
+
+    await page.route("**/api/slides/ai-generate", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          is_success: true,
+          deck_title: "AIの未来",
+          author: "",
+          slides: [
+            {
+              title: "はじめに",
+              subtitle: "",
+              content: "概要",
+              bullet_points: [],
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.click('[data-testid="ai-generate-button"]');
+    await expect(
+      page.locator('[data-testid="ai-generate-button"]'),
+    ).toContainText("AIが生成中");
+  });
+
+  test("should show preview after AI generation", async ({ page }) => {
+    await page.goto("/");
+    await page.fill('[data-testid="theme-input"]', "AIの未来");
+
+    await page.route("**/api/slides/ai-generate", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          is_success: true,
+          deck_title: "AIの未来と社会への影響",
+          author: "",
+          slides: [
+            {
+              title: "はじめに",
+              subtitle: "概要",
+              content: "AIの基本的な説明",
+              bullet_points: ["ポイント1", "ポイント2"],
+            },
+            {
+              title: "まとめ",
+              subtitle: "",
+              content: "結論",
+              bullet_points: [],
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.click('[data-testid="ai-generate-button"]');
+
+    await expect(
+      page.locator('[data-testid="slide-preview"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="preview-deck-title"]'),
+    ).toContainText("AIの未来と社会への影響");
+    await expect(
+      page.locator('[data-testid="preview-slide-0"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="preview-slide-1"]'),
+    ).toBeVisible();
+
+    await expect(
+      page.locator('[data-testid="revision-form"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="download-button"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="reset-button"]'),
+    ).toBeVisible();
+  });
+
+  test("should show revision validation error when instruction is empty", async ({
     page,
   }) => {
     await page.goto("/");
-    await page.fill('[data-testid="deck-title"]', "Test Presentation");
-    await page.click('[data-testid="generate-button"]');
+    await page.fill('[data-testid="theme-input"]', "テスト");
+
+    await page.route("**/api/slides/ai-generate", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          is_success: true,
+          deck_title: "テスト",
+          author: "",
+          slides: [
+            { title: "S1", subtitle: "", content: "C1", bullet_points: [] },
+          ],
+        }),
+      });
+    });
+
+    await page.click('[data-testid="ai-generate-button"]');
     await expect(
-      page.locator('[data-testid="validation-error"]'),
+      page.locator('[data-testid="slide-preview"]'),
     ).toBeVisible();
+
+    await page.click('[data-testid="revise-button"]');
     await expect(
-      page.locator('[data-testid="validation-error"]'),
-    ).toContainText("スライドのタイトル");
+      page.locator('[data-testid="revision-validation-error"]'),
+    ).toContainText("修正内容を入力");
   });
 
-  test("should add and remove slides", async ({ page }) => {
+  test("should reset to input form when clicking reset button", async ({
+    page,
+  }) => {
     await page.goto("/");
+    await page.fill('[data-testid="theme-input"]', "テスト");
+
+    await page.route("**/api/slides/ai-generate", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          is_success: true,
+          deck_title: "テスト",
+          author: "",
+          slides: [
+            { title: "S1", subtitle: "", content: "C1", bullet_points: [] },
+          ],
+        }),
+      });
+    });
+
+    await page.click('[data-testid="ai-generate-button"]');
     await expect(
-      page.locator('[data-testid="slide-item-0"]'),
+      page.locator('[data-testid="slide-preview"]'),
     ).toBeVisible();
 
-    await page.click('[data-testid="add-slide-button"]');
+    await page.click('[data-testid="reset-button"]');
     await expect(
-      page.locator('[data-testid="slide-item-1"]'),
+      page.locator('[data-testid="theme-input-form"]'),
     ).toBeVisible();
-
-    await page.click('[data-testid="remove-slide-1"]');
     await expect(
-      page.locator('[data-testid="slide-item-1"]'),
+      page.locator('[data-testid="slide-preview"]'),
     ).not.toBeVisible();
-  });
-
-  test("should add and remove bullet points", async ({ page }) => {
-    await page.goto("/");
-
-    await page.click('[data-testid="add-bullet-0"]');
-    await expect(
-      page.locator('[data-testid="bullet-point-0-0"]'),
-    ).toBeVisible();
-
-    await page.fill('[data-testid="bullet-point-0-0"]', "Test bullet");
-
-    await page.click('[data-testid="remove-bullet-0-0"]');
-    await expect(
-      page.locator('[data-testid="bullet-point-0-0"]'),
-    ).not.toBeVisible();
-  });
-
-  test("should fill form and submit for download", async ({ page }) => {
-    await page.goto("/");
-
-    await page.fill('[data-testid="deck-title"]', "Test Presentation");
-    await page.fill('[data-testid="deck-author"]', "Test Author");
-
-    await page.fill('[data-testid="slide-title-0"]', "First Slide");
-    await page.fill(
-      '[data-testid="slide-subtitle-0"]',
-      "Subtitle",
-    );
-    await page.fill(
-      '[data-testid="slide-content-0"]',
-      "Content of the first slide",
-    );
-
-    const downloadPromise = page.waitForEvent("download");
-    await page.click('[data-testid="generate-button"]');
-    const download = await downloadPromise;
-
-    expect(download.suggestedFilename()).toBe("generated_slides.pptx");
   });
 
   test("should navigate to 404 page for unknown routes", async ({

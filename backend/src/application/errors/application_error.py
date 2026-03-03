@@ -30,4 +30,19 @@ APPLICATION_ERRORS = {
         "code": "INVALID_SLIDE_DATA",
         "status": HttpStatus.BAD_REQUEST,
     },
+    "AI_GENERATION_FAILED": {
+        "message": "AI failed to generate slide content",
+        "code": "AI_GENERATION_FAILED",
+        "status": HttpStatus.INTERNAL_SERVER_ERROR,
+    },
+    "AI_REVISION_FAILED": {
+        "message": "AI failed to revise slide content",
+        "code": "AI_REVISION_FAILED",
+        "status": HttpStatus.INTERNAL_SERVER_ERROR,
+    },
+    "GEMINI_API_KEY_NOT_SET": {
+        "message": "GEMINI_API_KEY is not configured",
+        "code": "GEMINI_API_KEY_NOT_SET",
+        "status": HttpStatus.INTERNAL_SERVER_ERROR,
+    },
 }
