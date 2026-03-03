@@ -24,23 +24,29 @@ services:
       backend:
         condition: service_healthy
 
-  # === CLI Tools (existing) ===
+  # === CLI Tools (manual execution only) ===
+  # Run with: docker compose run --rm generate "prompt text"
   generate:
     build: .
     entrypoint: ["python", "generate_image.py"]
+    profiles: ["cli"]
     env_file:
       - .env
     volumes:
       - ./output:/app/output
 
+  # Run with: docker compose run --rm slides
   slides:
     build: .
     entrypoint: ["python", "create_slides.py"]
+    profiles: ["cli"]
     volumes:
       - ./output:/app/output
 
+  # Run with: docker compose run --rm pptx
   pptx:
     build: .
     entrypoint: ["python", "create_pptx.py"]
+    profiles: ["cli"]
     volumes:
       - ./output:/app/output
