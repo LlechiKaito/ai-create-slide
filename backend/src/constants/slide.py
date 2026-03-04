@@ -78,6 +78,7 @@ PIL_FONT_MAP = {
 
 GEMINI_MODEL_NAME = "gemini-2.5-flash"
 IMAGEN_MODEL_NAME = "imagen-4.0-generate-001"
+IMAGEN_SAFETY_FILTER_LEVEL = "BLOCK_MEDIUM_AND_ABOVE"
 
 SLIDE_CATEGORIES = {
     "sales_proposal": "営業提案書",
