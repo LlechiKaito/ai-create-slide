@@ -1,10 +1,14 @@
 from backend.src.application.dto.slide.slide_dto import (
     AiGenerateRequestDto,
     AiReviseRequestDto,
+    AiReviseSlideRequestDto,
     GenerateSlidesRequestDto,
     PreviewImagesRequestDto,
 )
 from backend.src.application.usecases.slide.ai_generate_usecase import AiGenerateUseCase
+from backend.src.application.usecases.slide.ai_revise_slide_usecase import (
+    AiReviseSlideUseCase,
+)
 from backend.src.application.usecases.slide.ai_revise_usecase import AiReviseUseCase
 from backend.src.application.usecases.slide.generate_slide_usecase import (
     GenerateSlideUseCase,
@@ -21,11 +25,13 @@ class SlideApplicationService:
         generate_slide_usecase: GenerateSlideUseCase,
         ai_generate_usecase: AiGenerateUseCase,
         ai_revise_usecase: AiReviseUseCase,
+        ai_revise_slide_usecase: AiReviseSlideUseCase,
         preview_images_usecase: PreviewImagesUseCase,
     ) -> None:
         self._generate_slide_usecase = generate_slide_usecase
         self._ai_generate_usecase = ai_generate_usecase
         self._ai_revise_usecase = ai_revise_usecase
+        self._ai_revise_slide_usecase = ai_revise_slide_usecase
         self._preview_images_usecase = preview_images_usecase
 
     def generate_slides(
@@ -46,18 +52,27 @@ class SlideApplicationService:
             deck_title=request.deck_title,
             author=request.author,
             slides_data=slides_data,
+            color_config=request.color_config.model_dump(),
         )
 
     def ai_generate(self, request: AiGenerateRequestDto) -> Result[dict, Exception]:
         return self._ai_generate_usecase.execute(
             theme=request.theme,
             num_slides=request.num_slides,
+            category=request.category,
         )
 
     def ai_revise(self, request: AiReviseRequestDto) -> Result[dict, Exception]:
         current_dict = request.current_content.model_dump()
         return self._ai_revise_usecase.execute(
             current_content=current_dict,
+            revision_instruction=request.revision_instruction,
+        )
+
+    def ai_revise_slide(self, request: AiReviseSlideRequestDto) -> Result[dict, Exception]:
+        current_slide_dict = request.current_slide.model_dump()
+        return self._ai_revise_slide_usecase.execute(
+            current_slide=current_slide_dict,
             revision_instruction=request.revision_instruction,
         )
 
@@ -69,4 +84,5 @@ class SlideApplicationService:
             deck_title=request.deck_title,
             author=request.author,
             slides=slides_data,
+            color_config=request.color_config.model_dump(),
         )

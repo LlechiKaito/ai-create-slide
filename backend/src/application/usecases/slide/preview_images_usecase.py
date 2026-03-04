@@ -9,10 +9,12 @@ class PreviewImagesUseCase:
         self._preview_repository = preview_repository
 
     def execute(
-        self, deck_title: str, author: str, slides: list[dict]
+        self, deck_title: str, author: str, slides: list[dict],
+        color_config: dict | None = None,
     ) -> Result[list[bytes], Exception]:
         return self._preview_repository.render_preview_images(
             deck_title=deck_title,
             author=author,
             slides=slides,
+            color_config=color_config,
         )

@@ -1,11 +1,18 @@
 from pydantic import BaseModel, Field
 
 from backend.src.constants.slide import (
+    DEFAULT_CATEGORY,
     MAX_BULLET_POINTS_PER_SLIDE,
     MAX_CONTENT_LENGTH,
     MAX_SLIDES_PER_DECK,
     MAX_TITLE_LENGTH,
 )
+
+
+class ColorConfigDto(BaseModel):
+    accent: str = Field(default="#F08228")
+    text: str = Field(default="#323232")
+    background: str = Field(default="#FFFFFF")
 
 
 class SlideRequestDto(BaseModel):
@@ -24,6 +31,7 @@ class GenerateSlidesRequestDto(BaseModel):
     slides: list[SlideRequestDto] = Field(
         ..., min_length=1, max_length=MAX_SLIDES_PER_DECK
     )
+    color_config: ColorConfigDto = Field(default_factory=ColorConfigDto)
 
 
 class GenerateSlidesResponseDto(BaseModel):
@@ -35,6 +43,8 @@ class GenerateSlidesResponseDto(BaseModel):
 class AiGenerateRequestDto(BaseModel):
     theme: str = Field(..., min_length=1, max_length=MAX_CONTENT_LENGTH)
     num_slides: int = Field(default=5, ge=1, le=MAX_SLIDES_PER_DECK)
+    category: str = Field(default=DEFAULT_CATEGORY)
+    color_config: ColorConfigDto = Field(default_factory=ColorConfigDto)
 
 
 class AiSlideContentDto(BaseModel):
@@ -56,6 +66,13 @@ class AiGenerateResponseDto(BaseModel):
 class AiReviseRequestDto(BaseModel):
     current_content: AiGenerateResponseDto
     revision_instruction: str = Field(..., min_length=1, max_length=MAX_CONTENT_LENGTH)
+    color_config: ColorConfigDto = Field(default_factory=ColorConfigDto)
+
+
+class AiReviseSlideRequestDto(BaseModel):
+    slide_index: int = Field(..., ge=0)
+    current_slide: AiSlideContentDto
+    revision_instruction: str = Field(..., min_length=1, max_length=MAX_CONTENT_LENGTH)
 
 
 class PreviewImagesRequestDto(BaseModel):
@@ -64,3 +81,4 @@ class PreviewImagesRequestDto(BaseModel):
     slides: list[AiSlideContentDto] = Field(
         ..., min_length=1, max_length=MAX_SLIDES_PER_DECK
     )
+    color_config: ColorConfigDto = Field(default_factory=ColorConfigDto)

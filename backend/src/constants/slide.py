@@ -28,6 +28,14 @@ PPTX_TEXT_WIDTH_DEFAULT_INCHES = 11.0
 GEMINI_MODEL_NAME = "gemini-2.5-flash"
 IMAGEN_MODEL_NAME = "imagen-4.0-generate-001"
 
+SLIDE_CATEGORIES = {
+    "sales_proposal": "営業提案書",
+    "business_plan": "事業企画書",
+    "training": "研修資料",
+    "report": "報告書",
+}
+DEFAULT_CATEGORY = "sales_proposal"
+
 PREVIEW_WIDTH = 1920
 PREVIEW_HEIGHT = 1080
 PREVIEW_ACCENT_BAR = 6

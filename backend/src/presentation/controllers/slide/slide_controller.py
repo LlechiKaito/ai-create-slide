@@ -4,8 +4,8 @@ from fastapi import Response
 
 from backend.src.application.dto.slide.slide_dto import (
     AiGenerateRequestDto,
-    AiGenerateResponseDto,
     AiReviseRequestDto,
+    AiReviseSlideRequestDto,
     GenerateSlidesRequestDto,
     PreviewImagesRequestDto,
 )
@@ -50,6 +50,13 @@ class SlideController:
             "deck_title": content.get("deck_title", ""),
             "author": content.get("author", ""),
             "slides": content.get("slides", []),
+        }
+
+    def ai_revise_slide(self, request: AiReviseSlideRequestDto) -> dict:
+        result = self._slide_service.ai_revise_slide(request)
+        return {
+            "is_success": True,
+            "slide": result.data,
         }
 
     def preview_images(self, request: PreviewImagesRequestDto) -> dict:

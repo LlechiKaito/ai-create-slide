@@ -1,6 +1,5 @@
 import base64
 import logging
-from concurrent.futures import ThreadPoolExecutor
 
 from backend.src.application.errors.application_error import (
     APPLICATION_ERRORS,
@@ -12,7 +11,7 @@ from backend.src.domain.repositories.slide.ai_slide_repository import AiSlideRep
 logger = logging.getLogger(__name__)
 
 
-class AiGenerateUseCase:
+class AiReviseSlideUseCase:
     def __init__(self, ai_repository: AiSlideRepository) -> None:
         self._ai_repository = ai_repository
 
@@ -33,16 +32,16 @@ class AiGenerateUseCase:
             logger.error("Image generation failed for slide '%s': %s", slide.get("title", "unknown"), result.error)
             slide["image_data"] = ""
 
-    def _generate_images_for_slides(self, slides: list[dict]) -> None:
-        with ThreadPoolExecutor() as executor:
-            executor.map(self._generate_image_for_slide, slides)
-
-    def execute(self, theme: str, num_slides: int, category: str = "sales_proposal") -> Result[dict, Exception]:
-        result = self._ai_repository.generate_slide_content(theme, num_slides, category)
+    def execute(
+        self, current_slide: dict, revision_instruction: str
+    ) -> Result[dict, Exception]:
+        result = self._ai_repository.revise_single_slide(
+            current_slide, revision_instruction
+        )
 
         if isinstance(result, Failure):
-            raise ApplicationError(**APPLICATION_ERRORS["AI_GENERATION_FAILED"])
+            raise ApplicationError(**APPLICATION_ERRORS["AI_REVISION_FAILED"])
 
-        content = result.data
-        self._generate_images_for_slides(content.get("slides", []))
-        return success(content)
+        revised_slide = result.data
+        self._generate_image_for_slide(revised_slide)
+        return success(revised_slide)

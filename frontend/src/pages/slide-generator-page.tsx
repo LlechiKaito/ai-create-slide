@@ -10,8 +10,11 @@ export function SlideGeneratorPage() {
     error,
     generatedContent,
     previewImages,
+    colorConfig,
+    setColorConfig,
     generateFromTheme,
     reviseContent,
+    reviseSlide,
     downloadPptx,
     resetToInput,
   } = useAiSlideGenerator();
@@ -43,6 +46,8 @@ export function SlideGeneratorPage() {
           <ThemeInputForm
             onGenerate={generateFromTheme}
             loading={loading}
+            colorConfig={colorConfig}
+            onColorChange={setColorConfig}
           />
         )}
 
@@ -51,6 +56,8 @@ export function SlideGeneratorPage() {
             <SlidePreview
               content={generatedContent}
               previewImages={previewImages}
+              onReviseSlide={reviseSlide}
+              loading={loading}
             />
             <RevisionForm
               onRevise={reviseContent}
