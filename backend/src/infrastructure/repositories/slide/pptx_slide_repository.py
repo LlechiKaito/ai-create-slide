@@ -12,19 +12,18 @@ from backend.src.constants.slide import (
     ACCENT_BAR_HEIGHT_EMU,
     DEFAULT_CONTENT_GAP,
     DEFAULT_FONT_FAMILY,
+    DEFAULT_FONT_SIZE_LEVEL,
     DEFAULT_IMAGE_SIZE,
     DIAGRAM_TYPES,
-    FONT_SIZE_BODY,
-    FONT_SIZE_BULLET,
-    FONT_SIZE_MAIN_TITLE,
-    FONT_SIZE_SUBTITLE,
-    FONT_SIZE_TITLE,
     PPTX_CHART_HEIGHT_INCHES,
     PPTX_CHART_LEFT_INCHES,
     PPTX_CHART_TOP_INCHES,
     PPTX_CHART_WIDTH_INCHES,
     PPTX_CONTENT_GAPS,
     PPTX_FONT_MAP,
+    PPTX_FONT_SIZE_ACCENT,
+    PPTX_FONT_SIZE_BODY,
+    PPTX_FONT_SIZE_TITLE,
     PPTX_IMAGE_RIGHT_MARGIN,
     PPTX_IMAGE_SIZES,
     PPTX_TEXT_WIDTH_DEFAULT_INCHES,
@@ -72,6 +71,23 @@ def _resolve_colors(color_config: dict | None) -> tuple[RGBColor, RGBColor, RGBC
     return accent, text, bg
 
 
+def _resolve_font_sizes(cfg: dict) -> dict[str, int]:
+    t = cfg.get("font_size_title", DEFAULT_FONT_SIZE_LEVEL)
+    b = cfg.get("font_size_body", DEFAULT_FONT_SIZE_LEVEL)
+    a = cfg.get("font_size_accent", DEFAULT_FONT_SIZE_LEVEL)
+    title = PPTX_FONT_SIZE_TITLE.get(t, PPTX_FONT_SIZE_TITLE["medium"])
+    body = PPTX_FONT_SIZE_BODY.get(b, PPTX_FONT_SIZE_BODY["medium"])
+    accent = PPTX_FONT_SIZE_ACCENT.get(a, PPTX_FONT_SIZE_ACCENT["medium"])
+    return {
+        "main_title": int(title * 1.375),
+        "title": title,
+        "subtitle": accent,
+        "body": body,
+        "bullet": max(body - 2, 14),
+        "bullet_marker": max(body - 6, 10),
+    }
+
+
 class PptxSlideRepository(SlideRepository):
     def generate_pptx(
         self, slide_deck: SlideDeck, color_config: dict | None = None
@@ -81,17 +97,20 @@ class PptxSlideRepository(SlideRepository):
         font_name = PPTX_FONT_MAP.get(cfg.get("font_family", DEFAULT_FONT_FAMILY), "")
         image_size = cfg.get("image_size", DEFAULT_IMAGE_SIZE)
         content_gap = cfg.get("content_gap", DEFAULT_CONTENT_GAP)
+        font_sizes = _resolve_font_sizes(cfg)
 
         prs = Presentation()
         prs.slide_width = Inches(SLIDE_WIDTH_INCHES)
         prs.slide_height = Inches(SLIDE_HEIGHT_INCHES)
 
-        self._add_title_slide(prs, slide_deck, accent, text_color, bg_color, font_name)
+        self._add_title_slide(
+            prs, slide_deck, accent, text_color, bg_color, font_name, font_sizes,
+        )
 
         for slide_entity in slide_deck.slides:
             self._add_content_slide(
                 prs, slide_entity, accent, text_color, bg_color,
-                font_name, image_size, content_gap,
+                font_name, image_size, content_gap, font_sizes,
             )
 
         buffer = io.BytesIO()
@@ -131,7 +150,7 @@ class PptxSlideRepository(SlideRepository):
         width: Emu,
         height: Emu,
         text: str,
-        font_size: int = FONT_SIZE_BODY,
+        font_size: int = 22,
         bold: bool = False,
         color: RGBColor = DEFAULT_TEXT,
         alignment: PP_ALIGN = PP_ALIGN.LEFT,
@@ -160,8 +179,9 @@ class PptxSlideRepository(SlideRepository):
     def _add_title_slide(
         self, prs: Presentation, slide_deck: SlideDeck,
         accent: RGBColor, text_color: RGBColor, bg_color: RGBColor,
-        font_name: str = "",
+        font_name: str = "", font_sizes: dict | None = None,
     ) -> None:
+        fs = font_sizes or _resolve_font_sizes({})
         slide = prs.slides.add_slide(prs.slide_layouts[6])
         self._set_slide_bg(slide, bg_color)
         self._add_accent_bar(slide, accent, top=True, bottom=True)
@@ -170,7 +190,7 @@ class PptxSlideRepository(SlideRepository):
 
         self._add_text_box(
             slide, Inches(0), Inches(2.0), slide_w, Inches(1.0),
-            slide_deck.title.value, FONT_SIZE_MAIN_TITLE, True, text_color,
+            slide_deck.title.value, fs["main_title"], True, text_color,
             PP_ALIGN.CENTER, font_name,
         )
 
@@ -179,7 +199,7 @@ class PptxSlideRepository(SlideRepository):
         if slide_deck.author:
             self._add_text_box(
                 slide, Inches(0), Inches(3.5), slide_w, Inches(0.5),
-                slide_deck.author, FONT_SIZE_SUBTITLE, False, GRAY,
+                slide_deck.author, fs["subtitle"], False, GRAY,
                 PP_ALIGN.CENTER, font_name,
             )
 
@@ -205,17 +225,19 @@ class PptxSlideRepository(SlideRepository):
     def _add_slide_header(
         self, slide: object, slide_entity: Slide,
         accent: RGBColor, text_color: RGBColor, font_name: str = "",
+        font_sizes: dict | None = None,
     ) -> None:
+        fs = font_sizes or _resolve_font_sizes({})
         slide_w = Inches(SLIDE_WIDTH_INCHES)
         if slide_entity.subtitle:
             self._add_text_box(
                 slide, Inches(0), Inches(0.3), slide_w, Inches(0.4),
-                slide_entity.subtitle, FONT_SIZE_SUBTITLE, False, accent,
+                slide_entity.subtitle, fs["subtitle"], False, accent,
                 PP_ALIGN.CENTER, font_name,
             )
         self._add_text_box(
             slide, Inches(0), Inches(0.7), slide_w, Inches(0.7),
-            slide_entity.title.value, FONT_SIZE_TITLE, True, text_color,
+            slide_entity.title.value, fs["title"], True, text_color,
             PP_ALIGN.CENTER, font_name,
         )
         self._add_accent_line(slide, Inches(4.5), Inches(1.5), Inches(4.3), accent)
@@ -223,26 +245,31 @@ class PptxSlideRepository(SlideRepository):
     def _add_slide_body(
         self, slide: object, slide_entity: Slide, text_w: Emu,
         accent: RGBColor, text_color: RGBColor, font_name: str = "",
+        font_sizes: dict | None = None,
     ) -> None:
+        fs = font_sizes or _resolve_font_sizes({})
         body_top = BODY_TOP_INCHES
 
         if slide_entity.content.value:
             self._add_text_box(
                 slide, Inches(BODY_LEFT_INCHES), Inches(body_top), text_w, Inches(0.8),
-                slide_entity.content.value, FONT_SIZE_BODY, False, text_color,
+                slide_entity.content.value, fs["body"], False, text_color,
                 font_name=font_name,
             )
             body_top += 1.0
 
         if slide_entity.has_bullet_points():
             self._add_bullet_points(
-                slide, slide_entity, text_w, body_top, accent, text_color, font_name,
+                slide, slide_entity, text_w, body_top, accent, text_color,
+                font_name, fs,
             )
 
     def _add_bullet_points(
         self, slide: object, slide_entity: Slide, text_w: Emu, top: float,
         accent: RGBColor, text_color: RGBColor, font_name: str = "",
+        font_sizes: dict | None = None,
     ) -> None:
+        fs = font_sizes or _resolve_font_sizes({})
         bullet_height = len(slide_entity.bullet_points) * 0.6 + 0.5
         txbox = slide.shapes.add_textbox(  # type: ignore[attr-defined]
             Inches(BODY_LEFT_INCHES), Inches(top), text_w, Inches(bullet_height),
@@ -260,7 +287,7 @@ class PptxSlideRepository(SlideRepository):
 
             marker = p.add_run()
             marker.text = "\u25cf  "
-            marker.font.size = Pt(FONT_SIZE_BULLET - 4)
+            marker.font.size = Pt(fs["bullet_marker"])
             marker.font.color.rgb = accent
             marker.font.bold = True
             if font_name:
@@ -268,7 +295,7 @@ class PptxSlideRepository(SlideRepository):
 
             text_run = p.add_run()
             text_run.text = point
-            text_run.font.size = Pt(FONT_SIZE_BULLET)
+            text_run.font.size = Pt(fs["bullet"])
             text_run.font.color.rgb = text_color
             if font_name:
                 text_run.font.name = font_name
@@ -326,6 +353,7 @@ class PptxSlideRepository(SlideRepository):
         font_name: str = "",
         image_size: str = DEFAULT_IMAGE_SIZE,
         content_gap: str = DEFAULT_CONTENT_GAP,
+        font_sizes: dict | None = None,
     ) -> None:
         slide = prs.slides.add_slide(prs.slide_layouts[6])
         self._set_slide_bg(slide, bg_color)
@@ -353,8 +381,8 @@ class PptxSlideRepository(SlideRepository):
         else:
             text_w = Inches(PPTX_TEXT_WIDTH_DEFAULT_INCHES)
 
-        self._add_slide_header(slide, slide_entity, accent, text_color, font_name)
-        self._add_slide_body(slide, slide_entity, text_w, accent, text_color, font_name)
+        self._add_slide_header(slide, slide_entity, accent, text_color, font_name, font_sizes)
+        self._add_slide_body(slide, slide_entity, text_w, accent, text_color, font_name, font_sizes)
 
         if is_diagram and slide_entity.chart_data:
             render_diagram(slide, slide_entity.chart_data, accent, text_color, font_name)

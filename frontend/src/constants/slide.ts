@@ -32,6 +32,12 @@ export const CONTENT_GAPS = [
   { key: "wide", label: "広い" },
 ] as const;
 
+export const FONT_SIZE_LEVELS = [
+  { key: "small", label: "小" },
+  { key: "medium", label: "中" },
+  { key: "large", label: "大" },
+] as const;
+
 export const DEFAULT_COLOR_CONFIG: ColorConfig = {
   accent: "#F08228",
   text: "#323232",
@@ -39,4 +45,7 @@ export const DEFAULT_COLOR_CONFIG: ColorConfig = {
   font_family: "gothic",
   image_size: "medium",
   content_gap: "medium",
+  font_size_title: "medium",
+  font_size_body: "medium",
+  font_size_accent: "medium",
 };

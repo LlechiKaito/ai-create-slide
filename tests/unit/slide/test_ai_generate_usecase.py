@@ -27,7 +27,7 @@ class MockAiSlideRepository(AiSlideRepository):
     def __init__(self, should_fail: bool = False) -> None:
         self._should_fail = should_fail
 
-    def generate_slide_content(self, theme: str, num_slides: int) -> Result[dict, Exception]:
+    def generate_slide_content(self, theme: str, num_slides: int, category: str = "sales_proposal") -> Result[dict, Exception]:
         if self._should_fail:
             return failure(Exception("AI generation failed"))
         return success(MOCK_GENERATED_CONTENT)
@@ -36,6 +36,11 @@ class MockAiSlideRepository(AiSlideRepository):
         self, current_content: dict, revision_instruction: str
     ) -> Result[dict, Exception]:
         return success(current_content)
+
+    def revise_single_slide(
+        self, current_slide: dict, revision_instruction: str
+    ) -> Result[dict, Exception]:
+        return success(current_slide)
 
     def generate_image(self, prompt: str) -> Result[bytes, Exception]:
         return success(MOCK_IMAGE_BYTES)
@@ -67,7 +72,7 @@ class TestAiGenerateUseCase:
                 self.captured_theme = ""
                 self.captured_num_slides = 0
 
-            def generate_slide_content(self, theme: str, num_slides: int) -> Result[dict, Exception]:
+            def generate_slide_content(self, theme: str, num_slides: int, category: str = "sales_proposal") -> Result[dict, Exception]:
                 self.captured_theme = theme
                 self.captured_num_slides = num_slides
                 return success(MOCK_GENERATED_CONTENT)
@@ -76,6 +81,11 @@ class TestAiGenerateUseCase:
                 self, current_content: dict, revision_instruction: str
             ) -> Result[dict, Exception]:
                 return success(current_content)
+
+            def revise_single_slide(
+                self, current_slide: dict, revision_instruction: str
+            ) -> Result[dict, Exception]:
+                return success(current_slide)
 
             def generate_image(self, prompt: str) -> Result[bytes, Exception]:
                 return success(MOCK_IMAGE_BYTES)

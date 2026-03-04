@@ -1,5 +1,5 @@
 import type { ColorConfig } from "@/types/slide";
-import { CONTENT_GAPS, FONT_FAMILIES, IMAGE_SIZES } from "@/constants/slide";
+import { CONTENT_GAPS, FONT_FAMILIES, FONT_SIZE_LEVELS, IMAGE_SIZES } from "@/constants/slide";
 
 interface ColorConfigPanelProps {
   colorConfig: ColorConfig;
@@ -76,6 +76,48 @@ export function ColorConfigPanel({
             data-testid="content-gap-select"
           >
             {CONTENT_GAPS.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="flex flex-wrap items-center gap-4">
+        <span className="text-sm font-medium text-gray-600">文字サイズ:</span>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          タイトル
+          <select
+            value={colorConfig.font_size_title}
+            onChange={(e) => handleChange("font_size_title", e.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            data-testid="font-size-title-select"
+          >
+            {FONT_SIZE_LEVELS.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          本文
+          <select
+            value={colorConfig.font_size_body}
+            onChange={(e) => handleChange("font_size_body", e.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            data-testid="font-size-body-select"
+          >
+            {FONT_SIZE_LEVELS.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          アクセント
+          <select
+            value={colorConfig.font_size_accent}
+            onChange={(e) => handleChange("font_size_accent", e.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            data-testid="font-size-accent-select"
+          >
+            {FONT_SIZE_LEVELS.map(({ key, label }) => (
               <option key={key} value={key}>{label}</option>
             ))}
           </select>

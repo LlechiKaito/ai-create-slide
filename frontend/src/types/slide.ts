@@ -5,6 +5,9 @@ export interface ColorConfig {
   font_family: string;
   image_size: string;
   content_gap: string;
+  font_size_title: string;
+  font_size_body: string;
+  font_size_accent: string;
 }
 
 export interface ChartSeries {

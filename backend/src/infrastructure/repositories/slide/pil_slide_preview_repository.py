@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 from backend.src.constants.slide import (
     DEFAULT_CONTENT_GAP,
     DEFAULT_FONT_FAMILY,
+    DEFAULT_FONT_SIZE_LEVEL,
     DEFAULT_IMAGE_SIZE,
     DIAGRAM_TYPES,
     PIL_FONT_MAP,
@@ -17,15 +18,11 @@ from backend.src.constants.slide import (
     PREVIEW_BULLET_INDENT,
     PREVIEW_CONTENT_GAPS,
     PREVIEW_CONTENT_START_Y,
-    PREVIEW_FONT_AUTHOR,
-    PREVIEW_FONT_BODY,
-    PREVIEW_FONT_BULLET,
-    PREVIEW_FONT_BULLET_MARKER,
-    PREVIEW_FONT_DECK_TITLE,
     PREVIEW_FONT_PAGE_NUM,
-    PREVIEW_FONT_SLIDE_TITLE,
-    PREVIEW_FONT_SUBTITLE,
     PREVIEW_HEIGHT,
+    PREVIEW_FONT_SIZE_ACCENT,
+    PREVIEW_FONT_SIZE_BODY,
+    PREVIEW_FONT_SIZE_TITLE,
     PREVIEW_IMAGE_SIZES,
     PREVIEW_LINE_SPACING,
     PREVIEW_MARGIN_X,
@@ -56,6 +53,25 @@ ACCENT_LINE_WIDTH = 3
 TITLE_ACCENT_LINE_WIDTH = 4
 ACCENT_LINE_LENGTH = 200
 IMAGE_BORDER_RADIUS = 20
+
+
+def _resolve_preview_font_sizes(cfg: dict) -> dict[str, int]:
+    t = cfg.get("font_size_title", DEFAULT_FONT_SIZE_LEVEL)
+    b = cfg.get("font_size_body", DEFAULT_FONT_SIZE_LEVEL)
+    a = cfg.get("font_size_accent", DEFAULT_FONT_SIZE_LEVEL)
+    title = PREVIEW_FONT_SIZE_TITLE.get(t, PREVIEW_FONT_SIZE_TITLE["medium"])
+    body = PREVIEW_FONT_SIZE_BODY.get(b, PREVIEW_FONT_SIZE_BODY["medium"])
+    accent = PREVIEW_FONT_SIZE_ACCENT.get(a, PREVIEW_FONT_SIZE_ACCENT["medium"])
+    return {
+        "deck_title": int(title * 1.5),
+        "author": int(accent * 1.3),
+        "title": title,
+        "subtitle": accent,
+        "body": body,
+        "bullet": max(body - 2, 18),
+        "bullet_marker": max(body - 8, 14),
+        "page_num": PREVIEW_FONT_PAGE_NUM,
+    }
 
 
 def _hex_to_tuple(hex_str: str) -> tuple[int, int, int]:
@@ -175,7 +191,9 @@ def _render_title_slide(
     deck_title: str, author: str,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
     bg: tuple[int, int, int], font_family: str = "gothic",
+    font_sizes: dict | None = None,
 ) -> bytes:
+    fs = font_sizes or _resolve_preview_font_sizes({})
     img, draw = _create_base(accent, bg)
 
     cy = (PREVIEW_HEIGHT - PREVIEW_TITLE_BLOCK_H) // 2
@@ -187,13 +205,13 @@ def _render_title_slide(
     )
     _draw_centered(
         draw, deck_title, cy + 30,
-        _get_font(PREVIEW_FONT_DECK_TITLE, bold=True, font_family=font_family),
+        _get_font(fs["deck_title"], bold=True, font_family=font_family),
         text_color,
     )
     if author:
         _draw_centered(
             draw, author, cy + 140,
-            _get_font(PREVIEW_FONT_AUTHOR, font_family=font_family),
+            _get_font(fs["author"], font_family=font_family),
             COLOR_LIGHT_GRAY,
         )
     draw.line(
@@ -207,18 +225,19 @@ def _render_title_slide(
 def _draw_slide_header(
     draw: ImageDraw.Draw, slide: dict, index: int,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
-    font_family: str = "gothic",
+    font_family: str = "gothic", font_sizes: dict | None = None,
 ) -> int:
+    fs = font_sizes or _resolve_preview_font_sizes({})
     draw.text(
         (PREVIEW_WIDTH - 100, PREVIEW_HEIGHT - 60),
         str(index),
-        font=_get_font(PREVIEW_FONT_PAGE_NUM, font_family=font_family),
+        font=_get_font(fs["page_num"], font_family=font_family),
         fill=COLOR_LIGHT_GRAY,
     )
     y = PREVIEW_CONTENT_START_Y
     draw.text(
         (PREVIEW_MARGIN_X, y), slide.get("title", ""),
-        font=_get_font(PREVIEW_FONT_SLIDE_TITLE, bold=True, font_family=font_family),
+        font=_get_font(fs["title"], bold=True, font_family=font_family),
         fill=text_color,
     )
     y += 70
@@ -231,7 +250,7 @@ def _draw_slide_header(
     if subtitle:
         draw.text(
             (PREVIEW_MARGIN_X, y), subtitle,
-            font=_get_font(PREVIEW_FONT_SUBTITLE, font_family=font_family),
+            font=_get_font(fs["subtitle"], font_family=font_family),
             fill=accent,
         )
         y += 50
@@ -243,7 +262,9 @@ def _draw_slide_body(
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
     font_family: str = "gothic",
     image_size_px: int = 0, image_gap_px: int = 0,
+    font_sizes: dict | None = None,
 ) -> None:
+    fs = font_sizes or _resolve_preview_font_sizes({})
     text_area_w = PREVIEW_WIDTH - PREVIEW_MARGIN_X * 2
     if image_size_px > 0:
         text_area_w = text_area_w - image_size_px - image_gap_px
@@ -252,7 +273,7 @@ def _draw_slide_body(
     if content:
         y = _draw_wrapped(
             draw, content, PREVIEW_MARGIN_X, y,
-            _get_font(PREVIEW_FONT_BODY, font_family=font_family),
+            _get_font(fs["body"], font_family=font_family),
             text_color, max_width=text_area_w,
         )
         y += 30
@@ -262,12 +283,12 @@ def _draw_slide_body(
             break
         draw.text(
             (PREVIEW_MARGIN_X, y), "\u25cf",
-            font=_get_font(PREVIEW_FONT_BULLET_MARKER, font_family=font_family),
+            font=_get_font(fs["bullet_marker"], font_family=font_family),
             fill=accent,
         )
         y = _draw_wrapped(
             draw, bp, PREVIEW_MARGIN_X + PREVIEW_BULLET_INDENT, y,
-            _get_font(PREVIEW_FONT_BULLET, font_family=font_family),
+            _get_font(fs["bullet"], font_family=font_family),
             text_color,
             max_width=text_area_w - PREVIEW_BULLET_INDENT,
         )
@@ -345,6 +366,7 @@ def _render_content_slide(
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
     bg: tuple[int, int, int], font_family: str = "gothic",
     image_size: str = DEFAULT_IMAGE_SIZE, content_gap: str = DEFAULT_CONTENT_GAP,
+    font_sizes: dict | None = None,
 ) -> bytes:
     img, draw = _create_base(accent, bg)
     image_data = slide.get("image_data", "")
@@ -365,10 +387,10 @@ def _render_content_slide(
         image_size_px = CHART_SIZE
         image_gap_px = CHART_MARGIN
 
-    y = _draw_slide_header(draw, slide, index, accent, text_color, font_family)
+    y = _draw_slide_header(draw, slide, index, accent, text_color, font_family, font_sizes)
     _draw_slide_body(
         draw, slide, y, accent, text_color, font_family,
-        image_size_px, image_gap_px,
+        image_size_px, image_gap_px, font_sizes,
     )
 
     if is_diagram:
@@ -393,16 +415,19 @@ class PilSlidePreviewRepository(SlidePreviewRepository):
         font_family = cfg.get("font_family", DEFAULT_FONT_FAMILY)
         image_size = cfg.get("image_size", DEFAULT_IMAGE_SIZE)
         content_gap = cfg.get("content_gap", DEFAULT_CONTENT_GAP)
+        font_sizes = _resolve_preview_font_sizes(cfg)
 
         images: list[bytes] = []
         images.append(
-            _render_title_slide(deck_title, author, accent, text_color, bg, font_family),
+            _render_title_slide(
+                deck_title, author, accent, text_color, bg, font_family, font_sizes,
+            ),
         )
         for i, slide in enumerate(slides, start=2):
             images.append(
                 _render_content_slide(
                     slide, i, accent, text_color, bg, font_family,
-                    image_size, content_gap,
+                    image_size, content_gap, font_sizes,
                 ),
             )
         return success(images)
