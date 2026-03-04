@@ -189,12 +189,18 @@ npx cdk deploy --all --context env=dev
 npx cdk deploy --all --context env=prod
 ```
 
-### GEMINI_API_KEY の設定
+### GEMINI_API_KEY の設定（SSM Parameter Store）
 
-Lambda の環境変数に `GEMINI_API_KEY` を手動で設定する必要があります。
+デプロイ前に SSM Parameter Store に API キーを登録してください。
 
 ```bash
-aws lambda update-function-configuration --function-name SlideGen-dev-Api-BackendFunctionXXXXXX --environment "Variables={HOST=0.0.0.0,PORT=8000,CORS_ALLOWED_ORIGINS=*,GEMINI_API_KEY=your-api-key}"
+aws ssm put-parameter --name "/slide-gen/dev/gemini-api-key" --type SecureString --value "your-gemini-api-key"
+```
+
+Lambda は起動時に SSM から自動取得します。prod 環境の場合:
+
+```bash
+aws ssm put-parameter --name "/slide-gen/prod/gemini-api-key" --type SecureString --value "your-gemini-api-key"
 ```
 
 ### リソース削除
