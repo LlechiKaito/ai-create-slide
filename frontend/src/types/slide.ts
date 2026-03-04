@@ -2,6 +2,9 @@ export interface ColorConfig {
   accent: string;
   text: string;
   background: string;
+  image_style: string;
+  image_palette: string;
+  font_family: string;
 }
 
 export interface ChartSeries {
@@ -69,6 +72,7 @@ export interface AiReviseSlideRequest {
   slide_index: number;
   current_slide: AiSlideContent;
   revision_instruction: string;
+  color_config: ColorConfig;
 }
 
 export interface AiReviseSlideResponse {

@@ -1,4 +1,5 @@
 import type { ColorConfig } from "@/types/slide";
+import { FONT_FAMILIES, IMAGE_PALETTES, IMAGE_STYLES } from "@/constants/slide";
 
 interface ColorConfigPanelProps {
   colorConfig: ColorConfig;
@@ -21,22 +22,65 @@ export function ColorConfigPanel({
 
   return (
     <div
-      className="flex items-center gap-6"
+      className="space-y-3"
       data-testid="color-config-panel"
     >
-      <span className="text-sm font-medium text-gray-600">カラー:</span>
-      {COLOR_FIELDS.map(({ key, label }) => (
-        <label key={key} className="flex items-center gap-2 text-sm text-gray-600">
-          {label}
-          <input
-            type="color"
-            value={colorConfig[key]}
-            onChange={(e) => handleChange(key, e.target.value)}
-            className="h-8 w-8 cursor-pointer rounded border border-gray-300"
-            data-testid={`color-${key}`}
-          />
+      <div className="flex items-center gap-6">
+        <span className="text-sm font-medium text-gray-600">カラー:</span>
+        {COLOR_FIELDS.map(({ key, label }) => (
+          <label key={key} className="flex items-center gap-2 text-sm text-gray-600">
+            {label}
+            <input
+              type="color"
+              value={colorConfig[key]}
+              onChange={(e) => handleChange(key, e.target.value)}
+              className="h-8 w-8 cursor-pointer rounded border border-gray-300"
+              data-testid={`color-${key}`}
+            />
+          </label>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          イラスト
+          <select
+            value={colorConfig.image_style}
+            onChange={(e) => handleChange("image_style", e.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            data-testid="image-style-select"
+          >
+            {IMAGE_STYLES.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
         </label>
-      ))}
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          パレット
+          <select
+            value={colorConfig.image_palette}
+            onChange={(e) => handleChange("image_palette", e.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            data-testid="image-palette-select"
+          >
+            {IMAGE_PALETTES.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          フォント
+          <select
+            value={colorConfig.font_family}
+            onChange={(e) => handleChange("font_family", e.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            data-testid="font-family-select"
+          >
+            {FONT_FAMILIES.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
     </div>
   );
 }

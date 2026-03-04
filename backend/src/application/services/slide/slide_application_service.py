@@ -61,6 +61,8 @@ class SlideApplicationService:
             theme=request.theme,
             num_slides=request.num_slides,
             category=request.category,
+            image_style=request.color_config.image_style,
+            image_palette=request.color_config.image_palette,
         )
 
     def ai_revise(self, request: AiReviseRequestDto) -> Result[dict, Exception]:
@@ -68,6 +70,8 @@ class SlideApplicationService:
         return self._ai_revise_usecase.execute(
             current_content=current_dict,
             revision_instruction=request.revision_instruction,
+            image_style=request.color_config.image_style,
+            image_palette=request.color_config.image_palette,
         )
 
     def ai_revise_slide(self, request: AiReviseSlideRequestDto) -> Result[dict, Exception]:
@@ -75,6 +79,8 @@ class SlideApplicationService:
         return self._ai_revise_slide_usecase.execute(
             current_slide=current_slide_dict,
             revision_instruction=request.revision_instruction,
+            image_style=request.color_config.image_style,
+            image_palette=request.color_config.image_palette,
         )
 
     def preview_images(

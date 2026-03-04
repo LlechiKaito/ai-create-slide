@@ -30,14 +30,44 @@ PPTX_CHART_HEIGHT_INCHES = 4.0
 PPTX_CHART_LEFT_INCHES = 7.0
 PPTX_CHART_TOP_INCHES = 2.0
 
-SUPPORTED_CHART_TYPES = ("column", "bar", "line", "pie", "timeline")
+SUPPORTED_CHART_TYPES = ("column", "bar", "line", "pie")
+DIAGRAM_TYPES = ("timeline", "process", "cycle", "pyramid", "funnel", "comparison")
 
-PPTX_TIMELINE_LEFT_INCHES = 1.0
-PPTX_TIMELINE_RIGHT_INCHES = 12.3
-PPTX_TIMELINE_Y_INCHES = 4.2
-PPTX_TIMELINE_MARKER_SIZE_EMU = 180000
-PPTX_TIMELINE_FONT_PERIOD = 14
-PPTX_TIMELINE_FONT_LABEL = 12
+IMAGE_STYLES = {
+    "flat_vector": "flat vector illustration",
+    "isometric": "3D isometric illustration",
+    "watercolor": "watercolor painting",
+    "line_art": "clean line art drawing",
+    "photorealistic": "professional stock photograph",
+}
+DEFAULT_IMAGE_STYLE = "flat_vector"
+
+IMAGE_PALETTES = {
+    "blue_orange": "blue and orange",
+    "blue_green": "blue and green",
+    "red_gray": "red and gray",
+    "purple_gold": "purple and gold",
+    "monochrome": "monochrome gray",
+    "earth": "earth tone",
+}
+DEFAULT_IMAGE_PALETTE = "blue_orange"
+
+FONT_FAMILIES = ("gothic", "mincho")
+DEFAULT_FONT_FAMILY = "gothic"
+PPTX_FONT_MAP = {
+    "gothic": "",
+    "mincho": "Noto Serif CJK JP",
+}
+PIL_FONT_MAP = {
+    "gothic": {
+        "bold": "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+        "regular": "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    },
+    "mincho": {
+        "bold": "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
+        "regular": "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+    },
+}
 
 GEMINI_MODEL_NAME = "gemini-2.5-flash"
 IMAGEN_MODEL_NAME = "imagen-4.0-generate-001"

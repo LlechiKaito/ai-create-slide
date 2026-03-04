@@ -38,10 +38,11 @@ class AiReviseUseCase:
             executor.map(self._generate_image_for_slide, slides)
 
     def execute(
-        self, current_content: dict, revision_instruction: str
+        self, current_content: dict, revision_instruction: str,
+        image_style: str = "", image_palette: str = "",
     ) -> Result[dict, Exception]:
         result = self._ai_repository.revise_slide_content(
-            current_content, revision_instruction
+            current_content, revision_instruction, image_style, image_palette,
         )
 
         if isinstance(result, Failure):

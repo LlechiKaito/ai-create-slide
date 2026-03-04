@@ -125,6 +125,7 @@ export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
         slide_index: slideIndex,
         current_slide: generatedContent.slides[slideIndex],
         revision_instruction: instruction,
+        color_config: colorConfig,
       });
 
       const revisedSlide = response.data.slide;

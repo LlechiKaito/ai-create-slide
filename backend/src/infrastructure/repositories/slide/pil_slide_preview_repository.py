@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw, ImageFont
 
 from backend.src.constants.slide import (
+    DEFAULT_FONT_FAMILY,
+    DIAGRAM_TYPES,
+    PIL_FONT_MAP,
     SUPPORTED_CHART_TYPES,
     PREVIEW_ACCENT_BAR,
     PREVIEW_ACCENT_LINE_W,
@@ -31,6 +34,9 @@ from backend.src.domain.commons.result import Result, success
 from backend.src.domain.repositories.slide.slide_preview_repository import (
     SlidePreviewRepository,
 )
+from backend.src.infrastructure.repositories.slide.pil_diagram_renderer import (
+    render_diagram,
+)
 
 matplotlib.use("Agg")
 logger = logging.getLogger(__name__)
@@ -42,8 +48,6 @@ COLOR_LIGHT_GRAY = (180, 180, 180)
 CHART_SIZE = 520
 CHART_MARGIN = 40
 
-FONT_PATH_BOLD = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
-FONT_PATH_REGULAR = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
 ACCENT_LINE_WIDTH = 3
 TITLE_ACCENT_LINE_WIDTH = 4
 ACCENT_LINE_LENGTH = 200
@@ -68,16 +72,19 @@ def _resolve_colors(
     return accent, text, bg
 
 
-def _get_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
-    paths = [FONT_PATH_BOLD, FONT_PATH_REGULAR]
-    if not bold:
-        paths.reverse()
-    for p in paths:
+def _get_font(
+    size: int, bold: bool = False, font_family: str = "gothic",
+) -> ImageFont.FreeTypeFont:
+    cfg = PIL_FONT_MAP.get(font_family, PIL_FONT_MAP["gothic"])
+    key = "bold" if bold else "regular"
+    try:
+        return ImageFont.truetype(cfg[key], size)
+    except (OSError, IOError):
+        alt = "regular" if bold else "bold"
         try:
-            return ImageFont.truetype(p, size)
+            return ImageFont.truetype(cfg[alt], size)
         except (OSError, IOError):
-            continue
-    return ImageFont.load_default()
+            return ImageFont.load_default()
 
 
 def _create_base(
@@ -161,7 +168,7 @@ def _decode_and_place_image(base: Image.Image, image_data: str) -> None:
 def _render_title_slide(
     deck_title: str, author: str,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
-    bg: tuple[int, int, int],
+    bg: tuple[int, int, int], font_family: str = "gothic",
 ) -> bytes:
     img, draw = _create_base(accent, bg)
 
@@ -174,12 +181,14 @@ def _render_title_slide(
     )
     _draw_centered(
         draw, deck_title, cy + 30,
-        _get_font(PREVIEW_FONT_DECK_TITLE, bold=True), text_color,
+        _get_font(PREVIEW_FONT_DECK_TITLE, bold=True, font_family=font_family),
+        text_color,
     )
     if author:
         _draw_centered(
             draw, author, cy + 140,
-            _get_font(PREVIEW_FONT_AUTHOR), COLOR_LIGHT_GRAY,
+            _get_font(PREVIEW_FONT_AUTHOR, font_family=font_family),
+            COLOR_LIGHT_GRAY,
         )
     draw.line(
         [(x_start, cy + 200), (x_start + PREVIEW_ACCENT_LINE_W, cy + 200)],
@@ -192,15 +201,19 @@ def _render_title_slide(
 def _draw_slide_header(
     draw: ImageDraw.Draw, slide: dict, index: int,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
+    font_family: str = "gothic",
 ) -> int:
     draw.text(
         (PREVIEW_WIDTH - 100, PREVIEW_HEIGHT - 60),
-        str(index), font=_get_font(PREVIEW_FONT_PAGE_NUM), fill=COLOR_LIGHT_GRAY,
+        str(index),
+        font=_get_font(PREVIEW_FONT_PAGE_NUM, font_family=font_family),
+        fill=COLOR_LIGHT_GRAY,
     )
     y = PREVIEW_CONTENT_START_Y
     draw.text(
         (PREVIEW_MARGIN_X, y), slide.get("title", ""),
-        font=_get_font(PREVIEW_FONT_SLIDE_TITLE, bold=True), fill=text_color,
+        font=_get_font(PREVIEW_FONT_SLIDE_TITLE, bold=True, font_family=font_family),
+        fill=text_color,
     )
     y += 70
     draw.line(
@@ -212,7 +225,8 @@ def _draw_slide_header(
     if subtitle:
         draw.text(
             (PREVIEW_MARGIN_X, y), subtitle,
-            font=_get_font(PREVIEW_FONT_SUBTITLE), fill=accent,
+            font=_get_font(PREVIEW_FONT_SUBTITLE, font_family=font_family),
+            fill=accent,
         )
         y += 50
     return y + 20
@@ -221,6 +235,7 @@ def _draw_slide_header(
 def _draw_slide_body(
     draw: ImageDraw.Draw, slide: dict, y: int, has_image: bool,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
+    font_family: str = "gothic",
 ) -> None:
     text_area_w = PREVIEW_WIDTH - PREVIEW_MARGIN_X * 2
     if has_image:
@@ -230,7 +245,8 @@ def _draw_slide_body(
     if content:
         y = _draw_wrapped(
             draw, content, PREVIEW_MARGIN_X, y,
-            _get_font(PREVIEW_FONT_BODY), text_color, max_width=text_area_w,
+            _get_font(PREVIEW_FONT_BODY, font_family=font_family),
+            text_color, max_width=text_area_w,
         )
         y += 30
 
@@ -239,58 +255,16 @@ def _draw_slide_body(
             break
         draw.text(
             (PREVIEW_MARGIN_X, y), "\u25cf",
-            font=_get_font(PREVIEW_FONT_BULLET_MARKER), fill=accent,
+            font=_get_font(PREVIEW_FONT_BULLET_MARKER, font_family=font_family),
+            fill=accent,
         )
         y = _draw_wrapped(
             draw, bp, PREVIEW_MARGIN_X + PREVIEW_BULLET_INDENT, y,
-            _get_font(PREVIEW_FONT_BULLET), text_color,
+            _get_font(PREVIEW_FONT_BULLET, font_family=font_family),
+            text_color,
             max_width=text_area_w - PREVIEW_BULLET_INDENT,
         )
         y += 10
-
-
-TIMELINE_LINE_Y = 480
-TIMELINE_LEFT = 160
-TIMELINE_RIGHT = 1760
-TIMELINE_MARKER_R = 14
-TIMELINE_FONT_PERIOD = 22
-TIMELINE_FONT_LABEL = 18
-
-
-def _render_timeline(
-    draw: ImageDraw.Draw, chart_data: dict,
-    accent: tuple[int, int, int], text_color: tuple[int, int, int],
-) -> None:
-    items = chart_data.get("items", [])
-    if not items:
-        return
-
-    line_y = TIMELINE_LINE_Y
-    draw.line(
-        [(TIMELINE_LEFT, line_y), (TIMELINE_RIGHT, line_y)],
-        fill=accent, width=4,
-    )
-
-    n = len(items)
-    total_w = TIMELINE_RIGHT - TIMELINE_LEFT
-    for i, item in enumerate(items):
-        cx = TIMELINE_LEFT + (total_w * i // (n - 1)) if n > 1 else (TIMELINE_LEFT + TIMELINE_RIGHT) // 2
-        r = TIMELINE_MARKER_R
-        draw.ellipse([(cx - r, line_y - r), (cx + r, line_y + r)], fill=accent)
-
-        period = item.get("period", "")
-        if period:
-            font = _get_font(TIMELINE_FONT_PERIOD, bold=True)
-            bbox = draw.textbbox((0, 0), period, font=font)
-            tw = bbox[2] - bbox[0]
-            draw.text((cx - tw // 2, line_y - 50), period, font=font, fill=accent)
-
-        label = item.get("label", "")
-        if label:
-            font = _get_font(TIMELINE_FONT_LABEL)
-            bbox = draw.textbbox((0, 0), label, font=font)
-            tw = bbox[2] - bbox[0]
-            draw.text((cx - tw // 2, line_y + 25), label, font=font, fill=text_color)
 
 
 def _render_chart_image(
@@ -304,7 +278,6 @@ def _render_chart_image(
     if not categories or not series_list:
         return None
 
-    accent_norm = tuple(c / 255.0 for c in accent)
     dpi = 100
     fig_size = CHART_SIZE / dpi
     fig, ax = plt.subplots(figsize=(fig_size, fig_size), dpi=dpi)
@@ -363,21 +336,24 @@ def _place_chart_on_slide(base: Image.Image, chart_img: Image.Image) -> None:
 def _render_content_slide(
     slide: dict, index: int,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
-    bg: tuple[int, int, int],
+    bg: tuple[int, int, int], font_family: str = "gothic",
 ) -> bytes:
     img, draw = _create_base(accent, bg)
     image_data = slide.get("image_data", "")
     chart_data = slide.get("chart_data")
-    is_timeline = bool(chart_data) and chart_data.get("chart_type") == "timeline"
-    has_chart = bool(chart_data) and not is_timeline
-    has_image = bool(image_data) and not has_chart and not is_timeline
+    is_diagram = (
+        bool(chart_data)
+        and chart_data.get("chart_type") in DIAGRAM_TYPES
+    )
+    has_chart = bool(chart_data) and not is_diagram
+    has_image = bool(image_data) and not has_chart and not is_diagram
     has_side_visual = has_chart or has_image
 
-    y = _draw_slide_header(draw, slide, index, accent, text_color)
-    _draw_slide_body(draw, slide, y, has_side_visual, accent, text_color)
+    y = _draw_slide_header(draw, slide, index, accent, text_color, font_family)
+    _draw_slide_body(draw, slide, y, has_side_visual, accent, text_color, font_family)
 
-    if is_timeline:
-        _render_timeline(draw, chart_data, accent, text_color)
+    if is_diagram:
+        render_diagram(draw, img, chart_data, accent, text_color, font_family)
     elif has_chart:
         chart_img = _render_chart_image(chart_data, accent)
         if chart_img:
@@ -394,9 +370,14 @@ class PilSlidePreviewRepository(SlidePreviewRepository):
         color_config: dict | None = None,
     ) -> Result[list[bytes], Exception]:
         accent, text_color, bg = _resolve_colors(color_config)
+        font_family = (color_config or {}).get("font_family", DEFAULT_FONT_FAMILY)
 
         images: list[bytes] = []
-        images.append(_render_title_slide(deck_title, author, accent, text_color, bg))
+        images.append(
+            _render_title_slide(deck_title, author, accent, text_color, bg, font_family),
+        )
         for i, slide in enumerate(slides, start=2):
-            images.append(_render_content_slide(slide, i, accent, text_color, bg))
+            images.append(
+                _render_content_slide(slide, i, accent, text_color, bg, font_family),
+            )
         return success(images)

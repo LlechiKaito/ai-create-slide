@@ -37,8 +37,13 @@ class AiGenerateUseCase:
         with ThreadPoolExecutor() as executor:
             executor.map(self._generate_image_for_slide, slides)
 
-    def execute(self, theme: str, num_slides: int, category: str = "sales_proposal") -> Result[dict, Exception]:
-        result = self._ai_repository.generate_slide_content(theme, num_slides, category)
+    def execute(
+        self, theme: str, num_slides: int, category: str = "sales_proposal",
+        image_style: str = "", image_palette: str = "",
+    ) -> Result[dict, Exception]:
+        result = self._ai_repository.generate_slide_content(
+            theme, num_slides, category, image_style, image_palette,
+        )
 
         if isinstance(result, Failure):
             raise ApplicationError(**APPLICATION_ERRORS["AI_GENERATION_FAILED"])
