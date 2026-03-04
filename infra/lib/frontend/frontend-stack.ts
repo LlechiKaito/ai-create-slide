@@ -61,22 +61,15 @@ export class FrontendStack extends cdk.Stack {
     });
 
     new s3deploy.BucketDeployment(this, "DeployWebsite", {
-      sources: [s3deploy.Source.asset("../frontend/dist")],
-      destinationBucket: siteBucket,
-      distribution: this.distribution,
-      distributionPaths: ["/*"],
-    });
-
-    new s3deploy.BucketDeployment(this, "DeployRuntimeConfig", {
       sources: [
+        s3deploy.Source.asset("../frontend/dist"),
         s3deploy.Source.jsonData("runtime-config.json", {
           apiUrl: props.apiUrl,
         }),
       ],
       destinationBucket: siteBucket,
       distribution: this.distribution,
-      distributionPaths: ["/runtime-config.json"],
-      prune: false,
+      distributionPaths: ["/*"],
     });
 
     new cdk.CfnOutput(this, "DistributionDomainName", {
