@@ -3,6 +3,7 @@ from fastapi import APIRouter, Response
 from backend.src.application.dto.slide.slide_dto import (
     AiGenerateRequestDto,
     AiReviseRequestDto,
+    AiReviseSlideRequestDto,
     GenerateSlidesRequestDto,
     PreviewImagesRequestDto,
 )
@@ -26,6 +27,11 @@ def create_slide_router() -> APIRouter:
     def ai_revise(request: AiReviseRequestDto) -> dict:
         controller = get_slide_controller()
         return controller.ai_revise(request)
+
+    @router.post("/ai-revise-slide")
+    def ai_revise_slide(request: AiReviseSlideRequestDto) -> dict:
+        controller = get_slide_controller()
+        return controller.ai_revise_slide(request)
 
     @router.post("/preview-images")
     def preview_images(request: PreviewImagesRequestDto) -> dict:

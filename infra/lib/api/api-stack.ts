@@ -1,4 +1,5 @@
 import * as cdk from "aws-cdk-lib/core";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as path from "path";
@@ -26,6 +27,8 @@ export class ApiStack extends cdk.Stack {
       retention: logs.RetentionDays.ONE_WEEK,
     });
 
+    const ssmParamName = props.config.geminiApiKeySsmParam;
+
     const backendFunction = new lambda.DockerImageFunction(
       this,
       "BackendFunction",
@@ -36,15 +39,30 @@ export class ApiStack extends cdk.Stack {
         ),
         memorySize: props.config.lambdaMemoryMiB,
         timeout: cdk.Duration.seconds(props.config.lambdaTimeoutSeconds),
-        reservedConcurrentExecutions:
-          props.config.lambdaReservedConcurrency,
         environment: {
           HOST: "0.0.0.0",
           PORT: "8000",
           CORS_ALLOWED_ORIGINS: "*",
+          GEMINI_API_KEY_SSM_PARAM: ssmParamName,
         },
         logGroup,
       },
+    );
+
+    backendFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["ssm:GetParameter"],
+        resources: [
+          cdk.Arn.format(
+            {
+              service: "ssm",
+              resource: "parameter",
+              resourceName: ssmParamName.replace(/^\//, ""),
+            },
+            this,
+          ),
+        ],
+      }),
     );
 
     this.functionUrl = backendFunction.addFunctionUrl({

@@ -159,43 +159,48 @@ ai-create-slide/
 ### デプロイ手順
 
 ```bash
-# 1. フロントエンドをビルド（CDK が dist/ を S3 にデプロイするため）
-cd frontend
-npm install && npm run build
-cd ..
+# 1. GEMINI_API_KEY を SSM Parameter Store に登録
+aws ssm put-parameter --name "/slide-gen/dev/gemini-api-key" --type SecureString --value "your-gemini-api-key" --region ap-northeast-1
 
 # 2. CDK の依存をインストール
 cd infra
 npm install
 
-# 3. テンプレートを確認（差分プレビュー）
-npx cdk diff --context env=dev
+# 3. バックエンドをデプロイ（Lambda Function URL を取得）
+npx cdk deploy SlideGen-dev-Api --context env=dev
 
-# 4. デプロイ（dev 環境）
-npx cdk deploy --all --context env=dev
+# 4. 出力された BackendUrl を確認し、フロントエンドをビルド
+cd ../frontend
+VITE_API_URL=https://xxxxxxxxxx.lambda-url.ap-northeast-1.on.aws npm run build
 
-# 5. デプロイ後、出力された URL を確認
-#    - BackendUrl: Lambda Function URL（API エンドポイント）
-#    - DistributionDomainName: CloudFront ドメイン（フロントエンド）
+# 5. フロントエンドをデプロイ
+cd ../infra
+npx cdk deploy SlideGen-dev-Frontend --context env=dev
 ```
 
 ### 環境別デプロイ
 
 ```bash
-# dev 環境（Lambda 512MB, 同時実行数 5）
+# dev 環境（Lambda 512MB）
 npx cdk deploy --all --context env=dev
 
-# prod 環境（Lambda 1024MB, 同時実行数 50）
+# prod 環境（Lambda 1024MB）
 npx cdk deploy --all --context env=prod
 ```
 
-### GEMINI_API_KEY の設定
+### GEMINI_API_KEY の設定（SSM Parameter Store）
 
-Lambda の環境変数に `GEMINI_API_KEY` を手動で設定する必要があります。
+デプロイ前に SSM Parameter Store に API キーを登録してください。
 
 ```bash
-aws lambda update-function-configuration --function-name SlideGen-dev-Api-BackendFunctionXXXXXX --environment "Variables={HOST=0.0.0.0,PORT=8000,CORS_ALLOWED_ORIGINS=*,GEMINI_API_KEY=your-api-key}"
+# dev 環境
+aws ssm put-parameter --name "/slide-gen/dev/gemini-api-key" --type SecureString --value "your-gemini-api-key" --region ap-northeast-1
+
+# prod 環境
+aws ssm put-parameter --name "/slide-gen/prod/gemini-api-key" --type SecureString --value "your-gemini-api-key" --region ap-northeast-1
 ```
+
+Lambda は起動時に SSM から自動取得します。
 
 ### リソース削除
 
