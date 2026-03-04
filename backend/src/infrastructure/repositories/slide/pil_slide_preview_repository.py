@@ -7,13 +7,15 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw, ImageFont
 
 from backend.src.constants.slide import (
+    DEFAULT_CONTENT_GAP,
     DEFAULT_FONT_FAMILY,
+    DEFAULT_IMAGE_SIZE,
     DIAGRAM_TYPES,
     PIL_FONT_MAP,
-    SUPPORTED_CHART_TYPES,
     PREVIEW_ACCENT_BAR,
     PREVIEW_ACCENT_LINE_W,
     PREVIEW_BULLET_INDENT,
+    PREVIEW_CONTENT_GAPS,
     PREVIEW_CONTENT_START_Y,
     PREVIEW_FONT_AUTHOR,
     PREVIEW_FONT_BODY,
@@ -24,11 +26,13 @@ from backend.src.constants.slide import (
     PREVIEW_FONT_SLIDE_TITLE,
     PREVIEW_FONT_SUBTITLE,
     PREVIEW_HEIGHT,
+    PREVIEW_IMAGE_SIZES,
     PREVIEW_LINE_SPACING,
     PREVIEW_MARGIN_X,
     PREVIEW_MAX_TEXT_WIDTH,
     PREVIEW_TITLE_BLOCK_H,
     PREVIEW_WIDTH,
+    SUPPORTED_CHART_TYPES,
 )
 from backend.src.domain.commons.result import Result, success
 from backend.src.domain.repositories.slide.slide_preview_repository import (
@@ -51,8 +55,6 @@ CHART_MARGIN = 40
 ACCENT_LINE_WIDTH = 3
 TITLE_ACCENT_LINE_WIDTH = 4
 ACCENT_LINE_LENGTH = 200
-IMAGE_SIZE = 520
-IMAGE_MARGIN = 40
 IMAGE_BORDER_RADIUS = 20
 
 
@@ -148,20 +150,24 @@ def _image_to_bytes(img: Image.Image) -> bytes:
     return buf.getvalue()
 
 
-def _decode_and_place_image(base: Image.Image, image_data: str) -> None:
+def _decode_and_place_image(
+    base: Image.Image, image_data: str,
+    image_size: str = DEFAULT_IMAGE_SIZE,
+) -> None:
+    size_px = PREVIEW_IMAGE_SIZES.get(image_size, PREVIEW_IMAGE_SIZES[DEFAULT_IMAGE_SIZE])
     raw = base64.b64decode(image_data)
     asset = Image.open(io.BytesIO(raw)).convert("RGBA")
-    asset = asset.resize((IMAGE_SIZE, IMAGE_SIZE), Image.LANCZOS)
+    asset = asset.resize((size_px, size_px), Image.LANCZOS)
 
-    mask = Image.new("L", (IMAGE_SIZE, IMAGE_SIZE), 0)
+    mask = Image.new("L", (size_px, size_px), 0)
     mask_draw = ImageDraw.Draw(mask)
     mask_draw.rounded_rectangle(
-        [(0, 0), (IMAGE_SIZE, IMAGE_SIZE)],
+        [(0, 0), (size_px, size_px)],
         radius=IMAGE_BORDER_RADIUS, fill=255,
     )
 
-    x = PREVIEW_WIDTH - PREVIEW_MARGIN_X - IMAGE_SIZE
-    y = (PREVIEW_HEIGHT - IMAGE_SIZE) // 2
+    x = PREVIEW_WIDTH - PREVIEW_MARGIN_X - size_px
+    y = (PREVIEW_HEIGHT - size_px) // 2
     base.paste(asset, (x, y), mask)
 
 
@@ -233,13 +239,14 @@ def _draw_slide_header(
 
 
 def _draw_slide_body(
-    draw: ImageDraw.Draw, slide: dict, y: int, has_image: bool,
+    draw: ImageDraw.Draw, slide: dict, y: int,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
     font_family: str = "gothic",
+    image_size_px: int = 0, image_gap_px: int = 0,
 ) -> None:
     text_area_w = PREVIEW_WIDTH - PREVIEW_MARGIN_X * 2
-    if has_image:
-        text_area_w = text_area_w - IMAGE_SIZE - IMAGE_MARGIN
+    if image_size_px > 0:
+        text_area_w = text_area_w - image_size_px - image_gap_px
 
     content = slide.get("content", "")
     if content:
@@ -337,6 +344,7 @@ def _render_content_slide(
     slide: dict, index: int,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
     bg: tuple[int, int, int], font_family: str = "gothic",
+    image_size: str = DEFAULT_IMAGE_SIZE, content_gap: str = DEFAULT_CONTENT_GAP,
 ) -> bytes:
     img, draw = _create_base(accent, bg)
     image_data = slide.get("image_data", "")
@@ -347,10 +355,21 @@ def _render_content_slide(
     )
     has_chart = bool(chart_data) and not is_diagram
     has_image = bool(image_data) and not has_chart and not is_diagram
-    has_side_visual = has_chart or has_image
+
+    image_size_px = 0
+    image_gap_px = 0
+    if has_image:
+        image_size_px = PREVIEW_IMAGE_SIZES.get(image_size, PREVIEW_IMAGE_SIZES[DEFAULT_IMAGE_SIZE])
+        image_gap_px = PREVIEW_CONTENT_GAPS.get(content_gap, PREVIEW_CONTENT_GAPS[DEFAULT_CONTENT_GAP])
+    elif has_chart:
+        image_size_px = CHART_SIZE
+        image_gap_px = CHART_MARGIN
 
     y = _draw_slide_header(draw, slide, index, accent, text_color, font_family)
-    _draw_slide_body(draw, slide, y, has_side_visual, accent, text_color, font_family)
+    _draw_slide_body(
+        draw, slide, y, accent, text_color, font_family,
+        image_size_px, image_gap_px,
+    )
 
     if is_diagram:
         render_diagram(draw, img, chart_data, accent, text_color, font_family)
@@ -359,7 +378,7 @@ def _render_content_slide(
         if chart_img:
             _place_chart_on_slide(img, chart_img)
     elif has_image:
-        _decode_and_place_image(img, image_data)
+        _decode_and_place_image(img, image_data, image_size)
 
     return _image_to_bytes(img)
 
@@ -370,7 +389,10 @@ class PilSlidePreviewRepository(SlidePreviewRepository):
         color_config: dict | None = None,
     ) -> Result[list[bytes], Exception]:
         accent, text_color, bg = _resolve_colors(color_config)
-        font_family = (color_config or {}).get("font_family", DEFAULT_FONT_FAMILY)
+        cfg = color_config or {}
+        font_family = cfg.get("font_family", DEFAULT_FONT_FAMILY)
+        image_size = cfg.get("image_size", DEFAULT_IMAGE_SIZE)
+        content_gap = cfg.get("content_gap", DEFAULT_CONTENT_GAP)
 
         images: list[bytes] = []
         images.append(
@@ -378,6 +400,9 @@ class PilSlidePreviewRepository(SlidePreviewRepository):
         )
         for i, slide in enumerate(slides, start=2):
             images.append(
-                _render_content_slide(slide, i, accent, text_color, bg, font_family),
+                _render_content_slide(
+                    slide, i, accent, text_color, bg, font_family,
+                    image_size, content_gap,
+                ),
             )
         return success(images)

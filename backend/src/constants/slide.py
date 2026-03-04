@@ -18,12 +18,34 @@ FONT_SIZE_MAIN_TITLE = 44
 
 GENERATED_FILENAME = "generated_slides.pptx"
 
-PPTX_IMAGE_WIDTH_INCHES = 5.0
-PPTX_IMAGE_HEIGHT_INCHES = 4.5
-PPTX_IMAGE_LEFT_INCHES = 7.5
-PPTX_IMAGE_TOP_INCHES = 1.8
-PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES = 6.0
+PPTX_IMAGE_SIZES = {
+    "small": {"width": 3.5, "height": 3.0},
+    "medium": {"width": 5.0, "height": 4.5},
+    "large": {"width": 6.5, "height": 5.5},
+}
+DEFAULT_IMAGE_SIZE = "medium"
+
+PPTX_CONTENT_GAPS = {
+    "narrow": 0.3,
+    "medium": 0.5,
+    "wide": 1.0,
+}
+DEFAULT_CONTENT_GAP = "medium"
+
+PPTX_IMAGE_RIGHT_MARGIN = 0.8
+PPTX_TEXT_WIDTH_WITH_CHART_INCHES = 6.0
 PPTX_TEXT_WIDTH_DEFAULT_INCHES = 11.0
+
+PREVIEW_IMAGE_SIZES = {
+    "small": 360,
+    "medium": 520,
+    "large": 680,
+}
+PREVIEW_CONTENT_GAPS = {
+    "narrow": 20,
+    "medium": 40,
+    "wide": 80,
+}
 
 PPTX_CHART_WIDTH_INCHES = 5.5
 PPTX_CHART_HEIGHT_INCHES = 4.0

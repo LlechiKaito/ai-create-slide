@@ -10,7 +10,9 @@ from pptx.util import Emu, Inches, Pt
 
 from backend.src.constants.slide import (
     ACCENT_BAR_HEIGHT_EMU,
+    DEFAULT_CONTENT_GAP,
     DEFAULT_FONT_FAMILY,
+    DEFAULT_IMAGE_SIZE,
     DIAGRAM_TYPES,
     FONT_SIZE_BODY,
     FONT_SIZE_BULLET,
@@ -21,13 +23,12 @@ from backend.src.constants.slide import (
     PPTX_CHART_LEFT_INCHES,
     PPTX_CHART_TOP_INCHES,
     PPTX_CHART_WIDTH_INCHES,
+    PPTX_CONTENT_GAPS,
     PPTX_FONT_MAP,
-    PPTX_IMAGE_HEIGHT_INCHES,
-    PPTX_IMAGE_LEFT_INCHES,
-    PPTX_IMAGE_TOP_INCHES,
-    PPTX_IMAGE_WIDTH_INCHES,
+    PPTX_IMAGE_RIGHT_MARGIN,
+    PPTX_IMAGE_SIZES,
     PPTX_TEXT_WIDTH_DEFAULT_INCHES,
-    PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES,
+    PPTX_TEXT_WIDTH_WITH_CHART_INCHES,
     SLIDE_HEIGHT_INCHES,
     SLIDE_WIDTH_INCHES,
     SUPPORTED_CHART_TYPES,
@@ -76,8 +77,10 @@ class PptxSlideRepository(SlideRepository):
         self, slide_deck: SlideDeck, color_config: dict | None = None
     ) -> Result[bytes, Exception]:
         accent, text_color, bg_color = _resolve_colors(color_config)
-        font_family = (color_config or {}).get("font_family", DEFAULT_FONT_FAMILY)
-        font_name = PPTX_FONT_MAP.get(font_family, "")
+        cfg = color_config or {}
+        font_name = PPTX_FONT_MAP.get(cfg.get("font_family", DEFAULT_FONT_FAMILY), "")
+        image_size = cfg.get("image_size", DEFAULT_IMAGE_SIZE)
+        content_gap = cfg.get("content_gap", DEFAULT_CONTENT_GAP)
 
         prs = Presentation()
         prs.slide_width = Inches(SLIDE_WIDTH_INCHES)
@@ -87,7 +90,8 @@ class PptxSlideRepository(SlideRepository):
 
         for slide_entity in slide_deck.slides:
             self._add_content_slide(
-                prs, slide_entity, accent, text_color, bg_color, font_name,
+                prs, slide_entity, accent, text_color, bg_color,
+                font_name, image_size, content_gap,
             )
 
         buffer = io.BytesIO()
@@ -179,15 +183,23 @@ class PptxSlideRepository(SlideRepository):
                 PP_ALIGN.CENTER, font_name,
             )
 
-    def _add_image_to_slide(self, slide: object, image_data: str) -> None:
+    def _add_image_to_slide(
+        self, slide: object, image_data: str, image_size: str = DEFAULT_IMAGE_SIZE,
+    ) -> None:
+        size_cfg = PPTX_IMAGE_SIZES.get(image_size, PPTX_IMAGE_SIZES[DEFAULT_IMAGE_SIZE])
+        img_w = size_cfg["width"]
+        img_h = size_cfg["height"]
+        img_left = SLIDE_WIDTH_INCHES - img_w - PPTX_IMAGE_RIGHT_MARGIN
+        img_top = max(1.5, (SLIDE_HEIGHT_INCHES - img_h) / 2)
+
         raw = base64.b64decode(image_data)
         image_stream = io.BytesIO(raw)
         slide.shapes.add_picture(  # type: ignore[attr-defined]
             image_stream,
-            Inches(PPTX_IMAGE_LEFT_INCHES),
-            Inches(PPTX_IMAGE_TOP_INCHES),
-            Inches(PPTX_IMAGE_WIDTH_INCHES),
-            Inches(PPTX_IMAGE_HEIGHT_INCHES),
+            Inches(img_left),
+            Inches(img_top),
+            Inches(img_w),
+            Inches(img_h),
         )
 
     def _add_slide_header(
@@ -312,6 +324,8 @@ class PptxSlideRepository(SlideRepository):
         self, prs: Presentation, slide_entity: Slide,
         accent: RGBColor, text_color: RGBColor, bg_color: RGBColor,
         font_name: str = "",
+        image_size: str = DEFAULT_IMAGE_SIZE,
+        content_gap: str = DEFAULT_CONTENT_GAP,
     ) -> None:
         slide = prs.slides.add_slide(prs.slide_layouts[6])
         self._set_slide_bg(slide, bg_color)
@@ -322,22 +336,29 @@ class PptxSlideRepository(SlideRepository):
             and slide_entity.chart_data
             and slide_entity.chart_data.get("chart_type") in DIAGRAM_TYPES
         )
-        has_side_visual = (
-            not is_diagram
-            and (bool(slide_entity.image_data) or slide_entity.has_chart())
+        has_chart = (
+            not is_diagram and slide_entity.has_chart() and slide_entity.chart_data
         )
-        text_w = (
-            Inches(PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES)
-            if has_side_visual
-            else Inches(PPTX_TEXT_WIDTH_DEFAULT_INCHES)
+        has_image = (
+            not is_diagram and not has_chart and bool(slide_entity.image_data)
         )
+
+        if has_image:
+            size_cfg = PPTX_IMAGE_SIZES.get(image_size, PPTX_IMAGE_SIZES[DEFAULT_IMAGE_SIZE])
+            gap_val = PPTX_CONTENT_GAPS.get(content_gap, PPTX_CONTENT_GAPS[DEFAULT_CONTENT_GAP])
+            img_left = SLIDE_WIDTH_INCHES - size_cfg["width"] - PPTX_IMAGE_RIGHT_MARGIN
+            text_w = Inches(img_left - gap_val - BODY_LEFT_INCHES)
+        elif has_chart:
+            text_w = Inches(PPTX_TEXT_WIDTH_WITH_CHART_INCHES)
+        else:
+            text_w = Inches(PPTX_TEXT_WIDTH_DEFAULT_INCHES)
 
         self._add_slide_header(slide, slide_entity, accent, text_color, font_name)
         self._add_slide_body(slide, slide_entity, text_w, accent, text_color, font_name)
 
         if is_diagram and slide_entity.chart_data:
             render_diagram(slide, slide_entity.chart_data, accent, text_color, font_name)
-        elif slide_entity.has_chart() and slide_entity.chart_data:
+        elif has_chart:
             self._add_chart_to_slide(slide, slide_entity.chart_data, accent)
-        elif slide_entity.image_data:
-            self._add_image_to_slide(slide, slide_entity.image_data)
+        elif has_image:
+            self._add_image_to_slide(slide, slide_entity.image_data, image_size)

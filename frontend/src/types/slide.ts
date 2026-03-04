@@ -3,6 +3,8 @@ export interface ColorConfig {
   text: string;
   background: string;
   font_family: string;
+  image_size: string;
+  content_gap: string;
 }
 
 export interface ChartSeries {

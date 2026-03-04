@@ -1,5 +1,5 @@
 import type { ColorConfig } from "@/types/slide";
-import { FONT_FAMILIES } from "@/constants/slide";
+import { CONTENT_GAPS, FONT_FAMILIES, IMAGE_SIZES } from "@/constants/slide";
 
 interface ColorConfigPanelProps {
   colorConfig: ColorConfig;
@@ -50,6 +50,32 @@ export function ColorConfigPanel({
             data-testid="font-family-select"
           >
             {FONT_FAMILIES.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          画像サイズ
+          <select
+            value={colorConfig.image_size}
+            onChange={(e) => handleChange("image_size", e.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            data-testid="image-size-select"
+          >
+            {IMAGE_SIZES.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          余白
+          <select
+            value={colorConfig.content_gap}
+            onChange={(e) => handleChange("content_gap", e.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            data-testid="content-gap-select"
+          >
+            {CONTENT_GAPS.map(({ key, label }) => (
               <option key={key} value={key}>{label}</option>
             ))}
           </select>

@@ -2,7 +2,9 @@ from pydantic import BaseModel, Field, field_validator
 
 from backend.src.constants.slide import (
     DEFAULT_CATEGORY,
+    DEFAULT_CONTENT_GAP,
     DEFAULT_FONT_FAMILY,
+    DEFAULT_IMAGE_SIZE,
     MAX_BULLET_POINTS_PER_SLIDE,
     MAX_CONTENT_LENGTH,
     MAX_SLIDES_PER_DECK,
@@ -15,6 +17,8 @@ class ColorConfigDto(BaseModel):
     text: str = Field(default="#323232")
     background: str = Field(default="#FFFFFF")
     font_family: str = Field(default=DEFAULT_FONT_FAMILY)
+    image_size: str = Field(default=DEFAULT_IMAGE_SIZE)
+    content_gap: str = Field(default=DEFAULT_CONTENT_GAP)
 
 
 class ChartSeriesDto(BaseModel):
