@@ -9,7 +9,7 @@ from pptx.util import Emu, Inches, Pt
 from backend.src.constants.slide import (
     ACCENT_BAR_HEIGHT_EMU,
     FONT_SIZE_BODY,
-    FONT_SIZE_HEADING,
+    FONT_SIZE_BULLET,
     FONT_SIZE_MAIN_TITLE,
     FONT_SIZE_SUBTITLE,
     FONT_SIZE_TITLE,
@@ -29,7 +29,13 @@ from backend.src.domain.repositories.slide.slide_repository import SlideReposito
 
 ORANGE = RGBColor(240, 130, 40)
 DARK = RGBColor(50, 50, 50)
+GRAY = RGBColor(120, 120, 120)
 WHITE = RGBColor(255, 255, 255)
+LIGHT_BG = RGBColor(248, 248, 248)
+
+BODY_LEFT_INCHES = 1.0
+BODY_TOP_INCHES = 2.0
+BULLET_SPACING_PT = 8
 
 
 class PptxSlideRepository(SlideRepository):
@@ -106,16 +112,16 @@ class PptxSlideRepository(SlideRepository):
         slide_w = Inches(SLIDE_WIDTH_INCHES)
 
         self._add_text_box(
-            slide, Inches(0), Inches(2.0), slide_w, Inches(0.5),
+            slide, Inches(0), Inches(2.0), slide_w, Inches(1.0),
             slide_deck.title.value, FONT_SIZE_MAIN_TITLE, True, DARK, PP_ALIGN.CENTER,
         )
 
-        self._add_accent_line(slide, Inches(4.5), Inches(3.0), Inches(4.3))
+        self._add_accent_line(slide, Inches(4.5), Inches(3.2), Inches(4.3))
 
         if slide_deck.author:
             self._add_text_box(
-                slide, Inches(0), Inches(3.3), slide_w, Inches(0.5),
-                slide_deck.author, FONT_SIZE_TITLE, False, DARK, PP_ALIGN.CENTER,
+                slide, Inches(0), Inches(3.5), slide_w, Inches(0.5),
+                slide_deck.author, FONT_SIZE_SUBTITLE, False, GRAY, PP_ALIGN.CENTER,
             )
 
     def _add_image_to_slide(self, slide: object, image_data: str) -> None:
@@ -133,30 +139,56 @@ class PptxSlideRepository(SlideRepository):
         slide_w = Inches(SLIDE_WIDTH_INCHES)
         if slide_entity.subtitle:
             self._add_text_box(
-                slide, Inches(0), Inches(0.4), slide_w, Inches(0.4),
+                slide, Inches(0), Inches(0.3), slide_w, Inches(0.4),
                 slide_entity.subtitle, FONT_SIZE_SUBTITLE, False, ORANGE, PP_ALIGN.CENTER,
             )
         self._add_text_box(
-            slide, Inches(0), Inches(0.8), slide_w, Inches(0.7),
+            slide, Inches(0), Inches(0.7), slide_w, Inches(0.7),
             slide_entity.title.value, FONT_SIZE_TITLE, True, DARK, PP_ALIGN.CENTER,
         )
         self._add_accent_line(slide, Inches(4.5), Inches(1.5), Inches(4.3))
 
     def _add_slide_body(self, slide: object, slide_entity: Slide, text_w: Emu) -> None:
-        content_y = Inches(2.0)
+        body_top = BODY_TOP_INCHES
+
         if slide_entity.content.value:
             self._add_text_box(
-                slide, Inches(1.2), content_y, text_w, Inches(2.0),
+                slide, Inches(BODY_LEFT_INCHES), Inches(body_top), text_w, Inches(0.8),
                 slide_entity.content.value, FONT_SIZE_BODY, False, DARK,
             )
-            content_y = Inches(3.5)
+            body_top += 1.0
+
         if slide_entity.has_bullet_points():
-            for i, point in enumerate(slide_entity.bullet_points):
-                y = content_y + Inches(i * 0.45)
-                self._add_text_box(
-                    slide, Inches(1.5), y, text_w, Inches(0.4),
-                    f"  {point}", FONT_SIZE_BODY, False, DARK,
-                )
+            self._add_bullet_points(slide, slide_entity, text_w, body_top)
+
+    def _add_bullet_points(
+        self, slide: object, slide_entity: Slide, text_w: Emu, top: float,
+    ) -> None:
+        bullet_height = len(slide_entity.bullet_points) * 0.6 + 0.5
+        txbox = slide.shapes.add_textbox(  # type: ignore[attr-defined]
+            Inches(BODY_LEFT_INCHES), Inches(top), text_w, Inches(bullet_height),
+        )
+        tf = txbox.text_frame
+        tf.word_wrap = True
+
+        for i, point in enumerate(slide_entity.bullet_points):
+            if i == 0:
+                p = tf.paragraphs[0]
+            else:
+                p = tf.add_paragraph()
+
+            p.space_after = Pt(BULLET_SPACING_PT)
+
+            marker = p.add_run()
+            marker.text = "\u25cf  "
+            marker.font.size = Pt(FONT_SIZE_BULLET - 4)
+            marker.font.color.rgb = ORANGE
+            marker.font.bold = True
+
+            text_run = p.add_run()
+            text_run.text = point
+            text_run.font.size = Pt(FONT_SIZE_BULLET)
+            text_run.font.color.rgb = DARK
 
     def _add_content_slide(self, prs: Presentation, slide_entity: Slide) -> None:
         slide = prs.slides.add_slide(prs.slide_layouts[6])
