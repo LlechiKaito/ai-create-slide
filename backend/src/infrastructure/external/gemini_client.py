@@ -22,6 +22,22 @@ from backend.src.domain.commons.result import Result, failure, success
 from backend.src.domain.repositories.slide.ai_slide_repository import AiSlideRepository
 
 
+def _strip_image_data(data: dict | list) -> dict | list:
+    if isinstance(data, list):
+        return [_strip_image_data(item) if isinstance(item, dict) else item for item in data]
+    stripped = {}
+    for k, v in data.items():
+        if k == "image_data":
+            continue
+        if isinstance(v, dict):
+            stripped[k] = _strip_image_data(v)
+        elif isinstance(v, list):
+            stripped[k] = _strip_image_data(v)
+        else:
+            stripped[k] = v
+    return stripped
+
+
 class GeminiAiSlideRepository(AiSlideRepository):
     def _get_client(self) -> genai.Client:
         api_key = os.environ.get("GEMINI_API_KEY")
@@ -63,7 +79,7 @@ class GeminiAiSlideRepository(AiSlideRepository):
     ) -> Result[dict, Exception]:
         client = self._get_client()
 
-        current_json = json.dumps(current_content, ensure_ascii=False, indent=2)
+        current_json = json.dumps(_strip_image_data(current_content), ensure_ascii=False, indent=2)
         user_message = (
             f"現在のスライド内容:\n{current_json}\n\n"
             f"修正指示: {revision_instruction}"
@@ -84,7 +100,7 @@ class GeminiAiSlideRepository(AiSlideRepository):
     ) -> Result[dict, Exception]:
         client = self._get_client()
 
-        current_json = json.dumps(current_slide, ensure_ascii=False, indent=2)
+        current_json = json.dumps(_strip_image_data(current_slide), ensure_ascii=False, indent=2)
         user_message = (
             f"現在のスライド内容:\n{current_json}\n\n"
             f"修正指示: {revision_instruction}"
