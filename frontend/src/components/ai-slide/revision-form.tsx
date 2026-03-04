@@ -36,14 +36,14 @@ export function RevisionForm({
       <form onSubmit={handleRevise} className="space-y-3">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-600">
-            修正内容を入力
+            全体への修正指示
           </label>
           <textarea
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
             rows={3}
-            placeholder="例: 3枚目のスライドにもっと具体例を追加してください"
+            placeholder="例: 全体的にもっとカジュアルなトーンにして、各スライドに具体的な数値データを追加してください"
             data-testid="revision-input"
           />
         </div>

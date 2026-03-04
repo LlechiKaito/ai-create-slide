@@ -27,7 +27,7 @@ export function SlideGeneratorPage() {
             <span className="text-orange-500">AI</span> Slide Generator
           </h1>
           <p className="text-sm text-gray-500">
-            テーマを入力するだけでAIがスライドを自動生成
+            テーマを入力するだけで、AIがプレゼン資料を自動作成します
           </p>
         </div>
       </header>

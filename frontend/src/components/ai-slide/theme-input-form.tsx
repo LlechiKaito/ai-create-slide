@@ -56,7 +56,7 @@ export function ThemeInputForm({
           AIでスライドを自動生成
         </h2>
         <p className="mb-6 text-sm text-gray-500">
-          カテゴリとテーマを入力するだけで、AIがスライドの内容を自動生成します
+          カテゴリとテーマを入力するだけで、AIがスライド構成・本文・イラストを自動生成します
         </p>
 
         <div className="space-y-4">
@@ -95,7 +95,7 @@ export function ThemeInputForm({
               onChange={(e) => setTheme(e.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
               rows={3}
-              placeholder="例: AIの未来と社会への影響について"
+              placeholder="例: 新規顧客向けにクラウド移行サービスの導入メリットと成功事例を紹介する営業提案書"
               data-testid="theme-input"
             />
           </div>

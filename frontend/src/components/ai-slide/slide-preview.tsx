@@ -68,7 +68,7 @@ export function SlidePreview({
                       onChange={(e) => setSlideInstruction(e.target.value)}
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
                       rows={2}
-                      placeholder="このスライドへの修正内容を入力"
+                      placeholder="例: グラフを追加して、データをもっと視覚的に見せてください"
                       data-testid={`slide-revision-input-${index - 1}`}
                     />
                     {validationError && (
