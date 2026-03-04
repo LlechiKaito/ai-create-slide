@@ -55,14 +55,30 @@ chart_type の選択肢:
 - "bar": 横棒グラフ（項目名が長い場合）
 - "line": 折れ線グラフ（推移・トレンド）
 - "pie": 円グラフ（構成比率。series は1つ、values の合計が100になるように）
+- "timeline": タイムライン図（経歴・沿革・プロセスの時系列表示）
+
+timeline の場合の形式（categories / series は不要）:
+"chart_data": {{
+  "chart_type": "timeline",
+  "title": "タイムラインタイトル（省略可）",
+  "items": [
+    {{"period": "2015年", "label": "○○大学卒業"}},
+    {{"period": "2018年", "label": "△△株式会社入社"}},
+    {{"period": "2020年", "label": "マネージャー昇進"}}
+  ]
+}}
+timeline ルール:
+- items は2〜8個まで。period は短く（年度・時期）、label は20文字以内
+- 経歴紹介・会社沿革・プロジェクト工程などに使う
+- timeline を使うスライドでは bullet_points は空にし、image_prompt は空文字列 "" にする
 
 ルール:
-- categories は2〜8個まで
-- series は1〜4個まで
+- categories は2〜8個まで（timeline 以外）
+- series は1〜4個まで（timeline 以外）
 - values は具体的な数値（テーマに合った現実的な値を生成）
 - グラフがないスライドでは chart_data を省略（null や空にしない）
 - 導入スライドとまとめスライドにはグラフ不要
-- 全スライドの半分以下にグラフを使う（多すぎると逆効果）
+- 全スライドの半分以下にグラフ/図を使う（多すぎると逆効果）
 """
 
 BASE_SYSTEM_PROMPT = """あなたは世界トップクラスのプレゼンテーションデザイナーです。

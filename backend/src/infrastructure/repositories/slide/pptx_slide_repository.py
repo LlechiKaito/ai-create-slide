@@ -25,6 +25,12 @@ from backend.src.constants.slide import (
     PPTX_IMAGE_WIDTH_INCHES,
     PPTX_TEXT_WIDTH_DEFAULT_INCHES,
     PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES,
+    PPTX_TIMELINE_FONT_LABEL,
+    PPTX_TIMELINE_FONT_PERIOD,
+    PPTX_TIMELINE_LEFT_INCHES,
+    PPTX_TIMELINE_MARKER_SIZE_EMU,
+    PPTX_TIMELINE_RIGHT_INCHES,
+    PPTX_TIMELINE_Y_INCHES,
     SLIDE_HEIGHT_INCHES,
     SLIDE_WIDTH_INCHES,
     SUPPORTED_CHART_TYPES,
@@ -238,6 +244,58 @@ class PptxSlideRepository(SlideRepository):
             text_run.font.size = Pt(FONT_SIZE_BULLET)
             text_run.font.color.rgb = text_color
 
+    def _add_timeline_to_slide(
+        self, slide: object, chart_data: dict,
+        accent: RGBColor, text_color: RGBColor,
+    ) -> None:
+        items = chart_data.get("items", [])
+        if not items:
+            return
+
+        left = Inches(PPTX_TIMELINE_LEFT_INCHES)
+        right = Inches(PPTX_TIMELINE_RIGHT_INCHES)
+        line_y = Inches(PPTX_TIMELINE_Y_INCHES)
+        line_w = right - left
+        marker_emu = Emu(PPTX_TIMELINE_MARKER_SIZE_EMU)
+        half_marker = Emu(PPTX_TIMELINE_MARKER_SIZE_EMU // 2)
+
+        line_shape = slide.shapes.add_shape(  # type: ignore[attr-defined]
+            1, left, line_y, line_w, Emu(25000),
+        )
+        line_shape.fill.solid()
+        line_shape.fill.fore_color.rgb = accent
+        line_shape.line.fill.background()
+
+        n = len(items)
+        for i, item in enumerate(items):
+            if n == 1:
+                cx = left + line_w // 2
+            else:
+                cx = left + Emu(int(line_w * i / (n - 1)))
+
+            dot = slide.shapes.add_shape(  # type: ignore[attr-defined]
+                9, cx - half_marker, line_y - half_marker, marker_emu, marker_emu,
+            )
+            dot.fill.solid()
+            dot.fill.fore_color.rgb = accent
+            dot.line.fill.background()
+
+            period = item.get("period", "")
+            if period:
+                self._add_text_box(
+                    slide, cx - Inches(1.0), line_y - Inches(0.7),
+                    Inches(2.0), Inches(0.4),
+                    period, PPTX_TIMELINE_FONT_PERIOD, True, accent, PP_ALIGN.CENTER,
+                )
+
+            label = item.get("label", "")
+            if label:
+                self._add_text_box(
+                    slide, cx - Inches(1.0), line_y + Inches(0.3),
+                    Inches(2.0), Inches(0.6),
+                    label, PPTX_TIMELINE_FONT_LABEL, False, text_color, PP_ALIGN.CENTER,
+                )
+
     def _add_chart_to_slide(
         self, slide: object, chart_data: dict, accent: RGBColor,
     ) -> None:
@@ -293,13 +351,23 @@ class PptxSlideRepository(SlideRepository):
         self._set_slide_bg(slide, bg_color)
         self._add_accent_bar(slide, accent, top=True, bottom=True)
 
-        has_visual = bool(slide_entity.image_data) or slide_entity.has_chart()
-        text_w = Inches(PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES) if has_visual else Inches(PPTX_TEXT_WIDTH_DEFAULT_INCHES)
+        is_timeline = (
+            slide_entity.has_chart()
+            and slide_entity.chart_data
+            and slide_entity.chart_data.get("chart_type") == "timeline"
+        )
+        has_side_visual = (
+            not is_timeline
+            and (bool(slide_entity.image_data) or slide_entity.has_chart())
+        )
+        text_w = Inches(PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES) if has_side_visual else Inches(PPTX_TEXT_WIDTH_DEFAULT_INCHES)
 
         self._add_slide_header(slide, slide_entity, accent, text_color)
         self._add_slide_body(slide, slide_entity, text_w, accent, text_color)
 
-        if slide_entity.has_chart() and slide_entity.chart_data:
+        if is_timeline and slide_entity.chart_data:
+            self._add_timeline_to_slide(slide, slide_entity.chart_data, accent, text_color)
+        elif slide_entity.has_chart() and slide_entity.chart_data:
             self._add_chart_to_slide(slide, slide_entity.chart_data, accent)
         elif slide_entity.image_data:
             self._add_image_to_slide(slide, slide_entity.image_data)

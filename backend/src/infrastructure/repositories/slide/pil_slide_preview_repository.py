@@ -249,6 +249,50 @@ def _draw_slide_body(
         y += 10
 
 
+TIMELINE_LINE_Y = 480
+TIMELINE_LEFT = 160
+TIMELINE_RIGHT = 1760
+TIMELINE_MARKER_R = 14
+TIMELINE_FONT_PERIOD = 22
+TIMELINE_FONT_LABEL = 18
+
+
+def _render_timeline(
+    draw: ImageDraw.Draw, chart_data: dict,
+    accent: tuple[int, int, int], text_color: tuple[int, int, int],
+) -> None:
+    items = chart_data.get("items", [])
+    if not items:
+        return
+
+    line_y = TIMELINE_LINE_Y
+    draw.line(
+        [(TIMELINE_LEFT, line_y), (TIMELINE_RIGHT, line_y)],
+        fill=accent, width=4,
+    )
+
+    n = len(items)
+    total_w = TIMELINE_RIGHT - TIMELINE_LEFT
+    for i, item in enumerate(items):
+        cx = TIMELINE_LEFT + (total_w * i // (n - 1)) if n > 1 else (TIMELINE_LEFT + TIMELINE_RIGHT) // 2
+        r = TIMELINE_MARKER_R
+        draw.ellipse([(cx - r, line_y - r), (cx + r, line_y + r)], fill=accent)
+
+        period = item.get("period", "")
+        if period:
+            font = _get_font(TIMELINE_FONT_PERIOD, bold=True)
+            bbox = draw.textbbox((0, 0), period, font=font)
+            tw = bbox[2] - bbox[0]
+            draw.text((cx - tw // 2, line_y - 50), period, font=font, fill=accent)
+
+        label = item.get("label", "")
+        if label:
+            font = _get_font(TIMELINE_FONT_LABEL)
+            bbox = draw.textbbox((0, 0), label, font=font)
+            tw = bbox[2] - bbox[0]
+            draw.text((cx - tw // 2, line_y + 25), label, font=font, fill=text_color)
+
+
 def _render_chart_image(
     chart_data: dict, accent: tuple[int, int, int],
 ) -> Image.Image | None:
@@ -324,14 +368,17 @@ def _render_content_slide(
     img, draw = _create_base(accent, bg)
     image_data = slide.get("image_data", "")
     chart_data = slide.get("chart_data")
-    has_chart = bool(chart_data)
-    has_image = bool(image_data) and not has_chart
-    has_visual = has_chart or has_image
+    is_timeline = bool(chart_data) and chart_data.get("chart_type") == "timeline"
+    has_chart = bool(chart_data) and not is_timeline
+    has_image = bool(image_data) and not has_chart and not is_timeline
+    has_side_visual = has_chart or has_image
 
     y = _draw_slide_header(draw, slide, index, accent, text_color)
-    _draw_slide_body(draw, slide, y, has_visual, accent, text_color)
+    _draw_slide_body(draw, slide, y, has_side_visual, accent, text_color)
 
-    if has_chart:
+    if is_timeline:
+        _render_timeline(draw, chart_data, accent, text_color)
+    elif has_chart:
         chart_img = _render_chart_image(chart_data, accent)
         if chart_img:
             _place_chart_on_slide(img, chart_img)
