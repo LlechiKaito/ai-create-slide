@@ -1,4 +1,5 @@
 import * as cdk from "aws-cdk-lib/core";
+import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
@@ -35,8 +36,12 @@ export class ApiStack extends cdk.Stack {
       {
         code: lambda.DockerImageCode.fromImageAsset(
           path.join(__dirname, "..", "..", "..", "backend"),
-          { file: "Dockerfile.lambda" },
+          {
+            file: "Dockerfile.lambda",
+            platform: ecr_assets.Platform.LINUX_AMD64,
+          },
         ),
+        architecture: lambda.Architecture.X86_64,
         memorySize: props.config.lambdaMemoryMiB,
         timeout: cdk.Duration.seconds(props.config.lambdaTimeoutSeconds),
         environment: {
