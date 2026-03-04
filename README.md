@@ -33,7 +33,7 @@
 | AI (テキスト) | Google Gemini API (`gemini-2.5-flash`) |
 | AI (画像) | Google Imagen API (`imagen-4.0-generate-001`) |
 | スライド生成 | python-pptx（PPTX） / Pillow（プレビュー画像） |
-| インフラ | Docker / Docker Compose / AWS CDK（ECS Fargate） |
+| インフラ | Docker / Docker Compose / AWS CDK（Lambda + CloudFront） |
 | テスト | pytest / Playwright / httpx |
 
 ## アーキテクチャ
@@ -132,12 +132,75 @@ ai-create-slide/
 │       ├── services/        ← API クライアント（axios）
 │       ├── types/           ← TypeScript 型定義
 │       └── constants/       ← 定数
-├── infra/                   ← AWS CDK（ECS Fargate）
+├── infra/                   ← AWS CDK（Lambda + CloudFront）
 ├── tests/                   ← テストスイート
 │   ├── unit/                ← ユニットテスト
 │   ├── integration/         ← インテグレーションテスト
 │   └── e2e/                 ← E2E テスト（Playwright）
 └── docker-compose.yml
+```
+
+## AWS デプロイ手順
+
+### 前提条件
+
+- AWS CLI 設定済み（`aws configure`）
+- AWS CDK Toolkit インストール済み（`npm install -g aws-cdk`）
+- CDK Bootstrap 実行済み（`cdk bootstrap aws://ACCOUNT_ID/REGION`）
+- Docker（CDK がコンテナイメージをビルドするため）
+
+### インフラ構成
+
+| スタック | リソース | 説明 |
+|---------|---------|------|
+| `SlideGen-{env}-Api` | Lambda (Docker) + Function URL | バックエンド API |
+| `SlideGen-{env}-Frontend` | S3 + CloudFront | フロントエンド配信 |
+
+### デプロイ手順
+
+```bash
+# 1. フロントエンドをビルド（CDK が dist/ を S3 にデプロイするため）
+cd frontend
+npm install && npm run build
+cd ..
+
+# 2. CDK の依存をインストール
+cd infra
+npm install
+
+# 3. テンプレートを確認（差分プレビュー）
+npx cdk diff --context env=dev
+
+# 4. デプロイ（dev 環境）
+npx cdk deploy --all --context env=dev
+
+# 5. デプロイ後、出力された URL を確認
+#    - BackendUrl: Lambda Function URL（API エンドポイント）
+#    - DistributionDomainName: CloudFront ドメイン（フロントエンド）
+```
+
+### 環境別デプロイ
+
+```bash
+# dev 環境（Lambda 512MB, 同時実行数 5）
+npx cdk deploy --all --context env=dev
+
+# prod 環境（Lambda 1024MB, 同時実行数 50）
+npx cdk deploy --all --context env=prod
+```
+
+### GEMINI_API_KEY の設定
+
+Lambda の環境変数に `GEMINI_API_KEY` を手動で設定する必要があります。
+
+```bash
+aws lambda update-function-configuration --function-name SlideGen-dev-Api-BackendFunctionXXXXXX --environment "Variables={HOST=0.0.0.0,PORT=8000,CORS_ALLOWED_ORIGINS=*,GEMINI_API_KEY=your-api-key}"
+```
+
+### リソース削除
+
+```bash
+npx cdk destroy --all --context env=dev
 ```
 
 ## CLI ツール（オプション）
