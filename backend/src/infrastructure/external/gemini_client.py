@@ -41,9 +41,9 @@ def _strip_image_data(data: dict | list) -> dict | list:
 
 class GeminiAiSlideRepository(AiSlideRepository):
     def _get_client(self) -> genai.Client:
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key or api_key == "your_api_key_here":
-            raise ApplicationError(**APPLICATION_ERRORS["GEMINI_API_KEY_NOT_SET"])
+        from backend.src.config.settings import get_gemini_api_key
+
+        api_key = get_gemini_api_key()
         return genai.Client(api_key=api_key)
 
     def _parse_json_response(self, text: str) -> dict:

@@ -2,7 +2,7 @@
 import * as cdk from "aws-cdk-lib/core";
 
 import { ENVIRONMENTS } from "../config/environments";
-import { ComputeStack } from "../lib/compute/compute-stack";
+import { ApiStack } from "../lib/api/api-stack";
 import { FrontendStack } from "../lib/frontend/frontend-stack";
 
 const app = new cdk.App();
@@ -16,7 +16,7 @@ if (!config) {
 
 const stackPrefix = `SlideGen-${config.envName}`;
 
-new ComputeStack(app, `${stackPrefix}-Compute`, {
+new ApiStack(app, `${stackPrefix}-Api`, {
   config,
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,

@@ -1,24 +1,24 @@
 export interface EnvironmentConfig {
   envName: string;
-  backendCpu: number;
-  backendMemoryMiB: number;
-  backendDesiredCount: number;
+  lambdaMemoryMiB: number;
+  lambdaTimeoutSeconds: number;
+  geminiApiKeySsmParam: string;
   removalPolicy: "destroy" | "retain";
 }
 
 export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
   dev: {
     envName: "dev",
-    backendCpu: 256,
-    backendMemoryMiB: 512,
-    backendDesiredCount: 1,
+    lambdaMemoryMiB: 512,
+    lambdaTimeoutSeconds: 300,
+    geminiApiKeySsmParam: "/slide-gen/dev/gemini-api-key",
     removalPolicy: "destroy",
   },
   prod: {
     envName: "prod",
-    backendCpu: 512,
-    backendMemoryMiB: 1024,
-    backendDesiredCount: 2,
-    removalPolicy: "retain",
+    lambdaMemoryMiB: 1024,
+    lambdaTimeoutSeconds: 300,
+    geminiApiKeySsmParam: "/slide-gen/prod/gemini-api-key",
+    removalPolicy: "destroy",
   },
 };
