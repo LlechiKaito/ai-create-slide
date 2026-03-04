@@ -14,7 +14,7 @@ class MockSlideRepository(SlideRepository):
     def __init__(self, should_fail: bool = False) -> None:
         self._should_fail = should_fail
 
-    def generate_pptx(self, slide_deck: SlideDeck) -> Success | Failure:
+    def generate_pptx(self, slide_deck: SlideDeck, color_config: dict | None = None) -> Success | Failure:
         if self._should_fail:
             return failure(Exception("Generation failed"))
         return success(b"fake-pptx-bytes")

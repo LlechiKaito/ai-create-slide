@@ -37,16 +37,45 @@ class AiReviseUseCase:
         with ThreadPoolExecutor() as executor:
             executor.map(self._generate_image_for_slide, slides)
 
+    def _build_old_prompts(self, current_content: dict) -> dict[int, dict[str, str]]:
+        old: dict[int, dict[str, str]] = {}
+        for i, slide in enumerate(current_content.get("slides", [])):
+            old[i] = {
+                "image_prompt": slide.get("image_prompt", ""),
+                "image_data": slide.get("image_data", ""),
+            }
+        return old
+
+    def _generate_images_selective(
+        self, slides: list[dict], old_prompts: dict[int, dict[str, str]],
+    ) -> None:
+        needs_generation: list[dict] = []
+        for i, slide in enumerate(slides):
+            old = old_prompts.get(i)
+            new_prompt = slide.get("image_prompt", "")
+            if old and old["image_prompt"] == new_prompt and old["image_data"]:
+                logger.info("Reusing existing image for slide: %s", slide.get("title", "unknown"))
+                slide["image_data"] = old["image_data"]
+            else:
+                needs_generation.append(slide)
+
+        if needs_generation:
+            logger.info("Generating images for %d/%d slides", len(needs_generation), len(slides))
+            with ThreadPoolExecutor() as executor:
+                executor.map(self._generate_image_for_slide, needs_generation)
+
     def execute(
-        self, current_content: dict, revision_instruction: str
+        self, current_content: dict, revision_instruction: str,
     ) -> Result[dict, Exception]:
+        old_prompts = self._build_old_prompts(current_content)
+
         result = self._ai_repository.revise_slide_content(
-            current_content, revision_instruction
+            current_content, revision_instruction,
         )
 
         if isinstance(result, Failure):
             raise ApplicationError(**APPLICATION_ERRORS["AI_REVISION_FAILED"])
 
         content = result.data
-        self._generate_images_for_slides(content.get("slides", []))
+        self._generate_images_selective(content.get("slides", []), old_prompts)
         return success(content)

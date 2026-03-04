@@ -41,7 +41,7 @@ class MockAiSlideRepository(AiSlideRepository):
     def __init__(self, should_fail: bool = False) -> None:
         self._should_fail = should_fail
 
-    def generate_slide_content(self, theme: str, num_slides: int) -> Result[dict, Exception]:
+    def generate_slide_content(self, theme: str, num_slides: int, category: str = "sales_proposal") -> Result[dict, Exception]:
         return success(MOCK_CURRENT_CONTENT)
 
     def revise_slide_content(
@@ -50,6 +50,11 @@ class MockAiSlideRepository(AiSlideRepository):
         if self._should_fail:
             return failure(Exception("AI revision failed"))
         return success(MOCK_REVISED_CONTENT)
+
+    def revise_single_slide(
+        self, current_slide: dict, revision_instruction: str
+    ) -> Result[dict, Exception]:
+        return success(current_slide)
 
     def generate_image(self, prompt: str) -> Result[bytes, Exception]:
         return success(MOCK_IMAGE_BYTES)
@@ -85,7 +90,7 @@ class TestAiReviseUseCase:
                 self.captured_content: dict = {}
                 self.captured_instruction = ""
 
-            def generate_slide_content(self, theme: str, num_slides: int) -> Result[dict, Exception]:
+            def generate_slide_content(self, theme: str, num_slides: int, category: str = "sales_proposal") -> Result[dict, Exception]:
                 return success({})
 
             def revise_slide_content(
@@ -94,6 +99,11 @@ class TestAiReviseUseCase:
                 self.captured_content = current_content
                 self.captured_instruction = revision_instruction
                 return success(MOCK_REVISED_CONTENT)
+
+            def revise_single_slide(
+                self, current_slide: dict, revision_instruction: str
+            ) -> Result[dict, Exception]:
+                return success(current_slide)
 
             def generate_image(self, prompt: str) -> Result[bytes, Exception]:
                 return success(MOCK_IMAGE_BYTES)

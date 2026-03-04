@@ -10,8 +10,11 @@ export function SlideGeneratorPage() {
     error,
     generatedContent,
     previewImages,
+    colorConfig,
+    setColorConfig,
     generateFromTheme,
     reviseContent,
+    reviseSlide,
     downloadPptx,
     resetToInput,
   } = useAiSlideGenerator();
@@ -24,7 +27,7 @@ export function SlideGeneratorPage() {
             <span className="text-orange-500">AI</span> Slide Generator
           </h1>
           <p className="text-sm text-gray-500">
-            テーマを入力するだけでAIがスライドを自動生成
+            テーマを入力するだけで、AIがプレゼン資料を自動作成します
           </p>
         </div>
       </header>
@@ -43,6 +46,8 @@ export function SlideGeneratorPage() {
           <ThemeInputForm
             onGenerate={generateFromTheme}
             loading={loading}
+            colorConfig={colorConfig}
+            onColorChange={setColorConfig}
           />
         )}
 
@@ -51,6 +56,8 @@ export function SlideGeneratorPage() {
             <SlidePreview
               content={generatedContent}
               previewImages={previewImages}
+              onReviseSlide={reviseSlide}
+              loading={loading}
             />
             <RevisionForm
               onRevise={reviseContent}

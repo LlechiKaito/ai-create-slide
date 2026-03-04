@@ -19,6 +19,7 @@ class GenerateSlideUseCase:
         deck_title: str,
         author: str,
         slides_data: list[dict],
+        color_config: dict | None = None,
     ) -> Result[bytes, Exception]:
         slides = tuple(
             Slide(
@@ -27,6 +28,7 @@ class GenerateSlideUseCase:
                 subtitle=s.get("subtitle"),
                 bullet_points=tuple(s.get("bullet_points", [])),
                 image_data=s.get("image_data"),
+                chart_data=s.get("chart_data"),
             )
             for s in slides_data
         )
@@ -37,7 +39,7 @@ class GenerateSlideUseCase:
             author=author,
         )
 
-        result = self._slide_repository.generate_pptx(slide_deck)
+        result = self._slide_repository.generate_pptx(slide_deck, color_config)
 
         if isinstance(result, Failure):
             raise ApplicationError(**APPLICATION_ERRORS["SLIDE_GENERATION_FAILED"])

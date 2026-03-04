@@ -30,7 +30,8 @@ class MockSlidePreviewRepository(SlidePreviewRepository):
         self.captured_slides: list[dict] = []
 
     def render_preview_images(
-        self, deck_title: str, author: str, slides: list[dict]
+        self, deck_title: str, author: str, slides: list[dict],
+        color_config: dict | None = None,
     ) -> Result[list[bytes], Exception]:
         self.captured_deck_title = deck_title
         self.captured_author = author

@@ -44,7 +44,9 @@ MOCK_REVISED_CONTENT = {
 }
 
 
-def mock_generate(self, theme: str, num_slides: int) -> Result[dict, Exception]:
+def mock_generate(
+    self, theme: str, num_slides: int, category: str = "sales_proposal",
+) -> Result[dict, Exception]:
     return success(MOCK_GENERATED_CONTENT)
 
 
