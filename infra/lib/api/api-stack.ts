@@ -39,8 +39,6 @@ export class ApiStack extends cdk.Stack {
         ),
         memorySize: props.config.lambdaMemoryMiB,
         timeout: cdk.Duration.seconds(props.config.lambdaTimeoutSeconds),
-        reservedConcurrentExecutions:
-          props.config.lambdaReservedConcurrency,
         environment: {
           HOST: "0.0.0.0",
           PORT: "8000",
