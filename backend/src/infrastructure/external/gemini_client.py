@@ -18,15 +18,7 @@ from backend.src.constants.prompts import (
     CHART_DATA_INSTRUCTIONS,
     REVISE_SINGLE_SLIDE_PROMPT,
 )
-from backend.src.constants.slide import (
-    DEFAULT_CATEGORY,
-    DEFAULT_IMAGE_PALETTE,
-    DEFAULT_IMAGE_STYLE,
-    GEMINI_MODEL_NAME,
-    IMAGE_PALETTES,
-    IMAGE_STYLES,
-    IMAGEN_MODEL_NAME,
-)
+from backend.src.constants.slide import DEFAULT_CATEGORY, GEMINI_MODEL_NAME, IMAGEN_MODEL_NAME
 from backend.src.domain.commons.result import Result, failure, success
 from backend.src.domain.repositories.slide.ai_slide_repository import AiSlideRepository
 
@@ -64,26 +56,14 @@ class GeminiAiSlideRepository(AiSlideRepository):
             cleaned = "\n".join(lines)
         return json.loads(cleaned)
 
-    def _resolve_style(
-        self, image_style: str, image_palette: str,
-    ) -> tuple[str, str]:
-        style_key = image_style or DEFAULT_IMAGE_STYLE
-        palette_key = image_palette or DEFAULT_IMAGE_PALETTE
-        style_desc = IMAGE_STYLES.get(style_key, IMAGE_STYLES[DEFAULT_IMAGE_STYLE])
-        palette_desc = IMAGE_PALETTES.get(palette_key, IMAGE_PALETTES[DEFAULT_IMAGE_PALETTE])
-        return style_desc, palette_desc
-
     def generate_slide_content(
         self, theme: str, num_slides: int, category: str = DEFAULT_CATEGORY,
-        image_style: str = "", image_palette: str = "",
     ) -> Result[dict, Exception]:
         client = self._get_client()
-        style_desc, palette_desc = self._resolve_style(image_style, image_palette)
 
         context = CATEGORY_CONTEXT.get(category, CATEGORY_CONTEXT[DEFAULT_CATEGORY])
         system_prompt = BASE_SYSTEM_PROMPT.format(
             category_context=context, chart_instructions=CHART_DATA_INSTRUCTIONS,
-            image_style_desc=style_desc, image_palette_desc=palette_desc,
         )
         user_message = f"テーマ: {theme}\nスライド枚数: {num_slides}枚"
 
@@ -99,14 +79,11 @@ class GeminiAiSlideRepository(AiSlideRepository):
 
     def revise_slide_content(
         self, current_content: dict, revision_instruction: str,
-        image_style: str = "", image_palette: str = "",
     ) -> Result[dict, Exception]:
         client = self._get_client()
-        style_desc, palette_desc = self._resolve_style(image_style, image_palette)
 
         prompt = BASE_REVISE_PROMPT.format(
             chart_instructions=CHART_DATA_INSTRUCTIONS,
-            image_style_desc=style_desc, image_palette_desc=palette_desc,
         )
         current_json = json.dumps(_strip_image_data(current_content), ensure_ascii=False, indent=2)
         user_message = (
@@ -126,14 +103,11 @@ class GeminiAiSlideRepository(AiSlideRepository):
 
     def revise_single_slide(
         self, current_slide: dict, revision_instruction: str,
-        image_style: str = "", image_palette: str = "",
     ) -> Result[dict, Exception]:
         client = self._get_client()
-        style_desc, palette_desc = self._resolve_style(image_style, image_palette)
 
         prompt = REVISE_SINGLE_SLIDE_PROMPT.format(
             chart_instructions=CHART_DATA_INSTRUCTIONS,
-            image_style_desc=style_desc, image_palette_desc=palette_desc,
         )
         current_json = json.dumps(_strip_image_data(current_slide), ensure_ascii=False, indent=2)
         user_message = (

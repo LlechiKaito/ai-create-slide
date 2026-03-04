@@ -33,24 +33,6 @@ PPTX_CHART_TOP_INCHES = 2.0
 SUPPORTED_CHART_TYPES = ("column", "bar", "line", "pie")
 DIAGRAM_TYPES = ("timeline", "process", "cycle", "pyramid", "funnel", "comparison")
 
-IMAGE_STYLES = {
-    "flat_vector": "flat vector illustration",
-    "isometric": "3D isometric illustration",
-    "watercolor": "watercolor painting",
-    "line_art": "clean line art drawing",
-    "photorealistic": "professional stock photograph",
-}
-DEFAULT_IMAGE_STYLE = "flat_vector"
-
-IMAGE_PALETTES = {
-    "blue_orange": "blue and orange",
-    "blue_green": "blue and green",
-    "red_gray": "red and gray",
-    "purple_gold": "purple and gold",
-    "monochrome": "monochrome gray",
-    "earth": "earth tone",
-}
-DEFAULT_IMAGE_PALETTE = "blue_orange"
 
 FONT_FAMILIES = ("gothic", "mincho")
 DEFAULT_FONT_FAMILY = "gothic"

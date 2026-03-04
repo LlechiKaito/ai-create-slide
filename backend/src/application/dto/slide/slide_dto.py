@@ -3,8 +3,6 @@ from pydantic import BaseModel, Field, field_validator
 from backend.src.constants.slide import (
     DEFAULT_CATEGORY,
     DEFAULT_FONT_FAMILY,
-    DEFAULT_IMAGE_PALETTE,
-    DEFAULT_IMAGE_STYLE,
     MAX_BULLET_POINTS_PER_SLIDE,
     MAX_CONTENT_LENGTH,
     MAX_SLIDES_PER_DECK,
@@ -16,8 +14,6 @@ class ColorConfigDto(BaseModel):
     accent: str = Field(default="#F08228")
     text: str = Field(default="#323232")
     background: str = Field(default="#FFFFFF")
-    image_style: str = Field(default=DEFAULT_IMAGE_STYLE)
-    image_palette: str = Field(default=DEFAULT_IMAGE_PALETTE)
     font_family: str = Field(default=DEFAULT_FONT_FAMILY)
 
 

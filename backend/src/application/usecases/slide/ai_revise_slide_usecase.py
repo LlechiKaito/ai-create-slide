@@ -34,10 +34,9 @@ class AiReviseSlideUseCase:
 
     def execute(
         self, current_slide: dict, revision_instruction: str,
-        image_style: str = "", image_palette: str = "",
     ) -> Result[dict, Exception]:
         result = self._ai_repository.revise_single_slide(
-            current_slide, revision_instruction, image_style, image_palette,
+            current_slide, revision_instruction,
         )
 
         if isinstance(result, Failure):

@@ -39,10 +39,9 @@ class AiGenerateUseCase:
 
     def execute(
         self, theme: str, num_slides: int, category: str = "sales_proposal",
-        image_style: str = "", image_palette: str = "",
     ) -> Result[dict, Exception]:
         result = self._ai_repository.generate_slide_content(
-            theme, num_slides, category, image_style, image_palette,
+            theme, num_slides, category,
         )
 
         if isinstance(result, Failure):

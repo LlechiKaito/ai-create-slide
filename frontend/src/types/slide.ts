@@ -2,8 +2,6 @@ export interface ColorConfig {
   accent: string;
   text: string;
   background: string;
-  image_style: string;
-  image_palette: string;
   font_family: string;
 }
 

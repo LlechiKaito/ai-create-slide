@@ -15,23 +15,6 @@ export const SLIDE_CATEGORIES = [
 
 export const DEFAULT_CATEGORY = "sales_proposal";
 
-export const IMAGE_STYLES = [
-  { key: "flat_vector", label: "フラットベクター" },
-  { key: "isometric", label: "アイソメトリック" },
-  { key: "watercolor", label: "水彩画" },
-  { key: "line_art", label: "線画" },
-  { key: "photorealistic", label: "フォトリアル" },
-] as const;
-
-export const IMAGE_PALETTES = [
-  { key: "blue_orange", label: "ブルー×オレンジ" },
-  { key: "blue_green", label: "ブルー×グリーン" },
-  { key: "red_gray", label: "レッド×グレー" },
-  { key: "purple_gold", label: "パープル×ゴールド" },
-  { key: "monochrome", label: "モノクロ" },
-  { key: "earth", label: "アース" },
-] as const;
-
 export const FONT_FAMILIES = [
   { key: "gothic", label: "ゴシック" },
   { key: "mincho", label: "明朝" },
@@ -41,7 +24,5 @@ export const DEFAULT_COLOR_CONFIG: ColorConfig = {
   accent: "#F08228",
   text: "#323232",
   background: "#FFFFFF",
-  image_style: "flat_vector",
-  image_palette: "blue_orange",
   font_family: "gothic",
 };
