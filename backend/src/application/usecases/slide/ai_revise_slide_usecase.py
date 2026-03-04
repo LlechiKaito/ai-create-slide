@@ -35,6 +35,9 @@ class AiReviseSlideUseCase:
     def execute(
         self, current_slide: dict, revision_instruction: str,
     ) -> Result[dict, Exception]:
+        old_prompt = current_slide.get("image_prompt", "")
+        old_image_data = current_slide.get("image_data", "")
+
         result = self._ai_repository.revise_single_slide(
             current_slide, revision_instruction,
         )
@@ -43,5 +46,10 @@ class AiReviseSlideUseCase:
             raise ApplicationError(**APPLICATION_ERRORS["AI_REVISION_FAILED"])
 
         revised_slide = result.data
-        self._generate_image_for_slide(revised_slide)
+        new_prompt = revised_slide.get("image_prompt", "")
+        if old_prompt == new_prompt and old_image_data:
+            logger.info("Reusing existing image for slide: %s", revised_slide.get("title", "unknown"))
+            revised_slide["image_data"] = old_image_data
+        else:
+            self._generate_image_for_slide(revised_slide)
         return success(revised_slide)
