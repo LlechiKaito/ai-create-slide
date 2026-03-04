@@ -16,18 +16,18 @@ if (!config) {
 
 const stackPrefix = `SlideGen-${config.envName}`;
 
-new ApiStack(app, `${stackPrefix}-Api`, {
+const cdkEnv = {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION,
+};
+
+const apiStack = new ApiStack(app, `${stackPrefix}-Api`, {
   config,
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
+  env: cdkEnv,
 });
 
 new FrontendStack(app, `${stackPrefix}-Frontend`, {
   config,
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
+  apiUrl: apiStack.functionUrl.url,
+  env: cdkEnv,
 });
