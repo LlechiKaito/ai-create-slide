@@ -76,6 +76,7 @@ export class FrontendStack extends cdk.Stack {
       destinationBucket: siteBucket,
       distribution: this.distribution,
       distributionPaths: ["/runtime-config.json"],
+      prune: false,
     });
 
     new cdk.CfnOutput(this, "DistributionDomainName", {
