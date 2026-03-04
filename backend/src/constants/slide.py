@@ -40,6 +40,7 @@ SLIDE_CATEGORIES = {
     "business_plan": "事業企画書",
     "training": "研修資料",
     "report": "報告書",
+    "other": "その他",
 }
 DEFAULT_CATEGORY = "sales_proposal"
 

@@ -10,6 +10,7 @@ export const SLIDE_CATEGORIES = [
   { key: "business_plan", label: "事業企画書" },
   { key: "training", label: "研修資料" },
   { key: "report", label: "報告書" },
+  { key: "other", label: "その他" },
 ] as const;
 
 export const DEFAULT_CATEGORY = "sales_proposal";
