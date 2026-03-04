@@ -67,7 +67,7 @@ class AiSlideContentDto(BaseModel):
     bullet_points: list[str] = Field(default_factory=list)
     image_prompt: str = ""
     image_data: str = ""
-    chart_data: ChartDataDto | None = None
+    chart_data: dict | None = None
 
 
 class AiGenerateResponseDto(BaseModel):
