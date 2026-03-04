@@ -15,6 +15,18 @@ class ColorConfigDto(BaseModel):
     background: str = Field(default="#FFFFFF")
 
 
+class ChartSeriesDto(BaseModel):
+    name: str = ""
+    values: list[float] = Field(default_factory=list)
+
+
+class ChartDataDto(BaseModel):
+    chart_type: str = Field(default="column")
+    title: str = ""
+    categories: list[str] = Field(default_factory=list)
+    series: list[ChartSeriesDto] = Field(default_factory=list)
+
+
 class SlideRequestDto(BaseModel):
     title: str = Field(..., min_length=1, max_length=MAX_TITLE_LENGTH)
     subtitle: str = Field(default="", max_length=MAX_TITLE_LENGTH)
@@ -23,6 +35,7 @@ class SlideRequestDto(BaseModel):
         default_factory=list, max_length=MAX_BULLET_POINTS_PER_SLIDE
     )
     image_data: str = ""
+    chart_data: ChartDataDto | None = None
 
 
 class GenerateSlidesRequestDto(BaseModel):
@@ -54,6 +67,7 @@ class AiSlideContentDto(BaseModel):
     bullet_points: list[str] = Field(default_factory=list)
     image_prompt: str = ""
     image_data: str = ""
+    chart_data: ChartDataDto | None = None
 
 
 class AiGenerateResponseDto(BaseModel):

@@ -162,6 +162,7 @@ export function useAiSlideGenerator(): UseAiSlideGeneratorReturn {
           content: s.content,
           bullet_points: s.bullet_points,
           image_data: s.image_data || "",
+          chart_data: s.chart_data || null,
         })),
         color_config: colorConfig,
       };

@@ -4,6 +4,18 @@ export interface ColorConfig {
   background: string;
 }
 
+export interface ChartSeries {
+  name: string;
+  values: number[];
+}
+
+export interface ChartData {
+  chart_type: string;
+  title: string;
+  categories: string[];
+  series: ChartSeries[];
+}
+
 export interface GenerateSlidesRequest {
   deck_title: string;
   author: string;
@@ -13,6 +25,7 @@ export interface GenerateSlidesRequest {
     content: string;
     bullet_points: string[];
     image_data: string;
+    chart_data: ChartData | null;
   }[];
   color_config: ColorConfig;
 }
@@ -31,6 +44,7 @@ export interface AiSlideContent {
   bullet_points: string[];
   image_prompt: string;
   image_data: string;
+  chart_data: ChartData | null;
 }
 
 export interface AiGenerateResponse {

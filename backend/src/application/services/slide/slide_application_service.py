@@ -44,6 +44,7 @@ class SlideApplicationService:
                 "content": slide.content,
                 "bullet_points": slide.bullet_points,
                 "image_data": slide.image_data,
+                "chart_data": slide.chart_data.model_dump() if slide.chart_data else None,
             }
             for slide in request.slides
         ]

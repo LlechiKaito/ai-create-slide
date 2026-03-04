@@ -15,6 +15,7 @@ from backend.src.constants.prompts import (
     BASE_REVISE_PROMPT,
     BASE_SYSTEM_PROMPT,
     CATEGORY_CONTEXT,
+    CHART_DATA_INSTRUCTIONS,
     REVISE_SINGLE_SLIDE_PROMPT,
 )
 from backend.src.constants.slide import DEFAULT_CATEGORY, GEMINI_MODEL_NAME, IMAGEN_MODEL_NAME
@@ -61,7 +62,9 @@ class GeminiAiSlideRepository(AiSlideRepository):
         client = self._get_client()
 
         context = CATEGORY_CONTEXT.get(category, CATEGORY_CONTEXT[DEFAULT_CATEGORY])
-        system_prompt = BASE_SYSTEM_PROMPT.format(category_context=context)
+        system_prompt = BASE_SYSTEM_PROMPT.format(
+            category_context=context, chart_instructions=CHART_DATA_INSTRUCTIONS,
+        )
         user_message = f"テーマ: {theme}\nスライド枚数: {num_slides}枚"
 
         response = client.models.generate_content(
@@ -79,6 +82,7 @@ class GeminiAiSlideRepository(AiSlideRepository):
     ) -> Result[dict, Exception]:
         client = self._get_client()
 
+        prompt = BASE_REVISE_PROMPT.format(chart_instructions=CHART_DATA_INSTRUCTIONS)
         current_json = json.dumps(_strip_image_data(current_content), ensure_ascii=False, indent=2)
         user_message = (
             f"現在のスライド内容:\n{current_json}\n\n"
@@ -88,7 +92,7 @@ class GeminiAiSlideRepository(AiSlideRepository):
         response = client.models.generate_content(
             model=GEMINI_MODEL_NAME,
             contents=[
-                {"role": "user", "parts": [{"text": BASE_REVISE_PROMPT + "\n\n" + user_message}]},
+                {"role": "user", "parts": [{"text": prompt + "\n\n" + user_message}]},
             ],
         )
 
@@ -100,6 +104,7 @@ class GeminiAiSlideRepository(AiSlideRepository):
     ) -> Result[dict, Exception]:
         client = self._get_client()
 
+        prompt = REVISE_SINGLE_SLIDE_PROMPT.format(chart_instructions=CHART_DATA_INSTRUCTIONS)
         current_json = json.dumps(_strip_image_data(current_slide), ensure_ascii=False, indent=2)
         user_message = (
             f"現在のスライド内容:\n{current_json}\n\n"
@@ -109,7 +114,7 @@ class GeminiAiSlideRepository(AiSlideRepository):
         response = client.models.generate_content(
             model=GEMINI_MODEL_NAME,
             contents=[
-                {"role": "user", "parts": [{"text": REVISE_SINGLE_SLIDE_PROMPT + "\n\n" + user_message}]},
+                {"role": "user", "parts": [{"text": prompt + "\n\n" + user_message}]},
             ],
         )
 

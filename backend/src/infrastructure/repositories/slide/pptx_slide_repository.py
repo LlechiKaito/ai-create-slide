@@ -2,7 +2,9 @@ import base64
 import io
 
 from pptx import Presentation
+from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
+from pptx.enum.chart import XL_CHART_TYPE
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
@@ -13,6 +15,10 @@ from backend.src.constants.slide import (
     FONT_SIZE_MAIN_TITLE,
     FONT_SIZE_SUBTITLE,
     FONT_SIZE_TITLE,
+    PPTX_CHART_HEIGHT_INCHES,
+    PPTX_CHART_LEFT_INCHES,
+    PPTX_CHART_TOP_INCHES,
+    PPTX_CHART_WIDTH_INCHES,
     PPTX_IMAGE_HEIGHT_INCHES,
     PPTX_IMAGE_LEFT_INCHES,
     PPTX_IMAGE_TOP_INCHES,
@@ -21,6 +27,7 @@ from backend.src.constants.slide import (
     PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES,
     SLIDE_HEIGHT_INCHES,
     SLIDE_WIDTH_INCHES,
+    SUPPORTED_CHART_TYPES,
 )
 from backend.src.domain.commons.result import Result, success
 from backend.src.domain.entities.slide.slide import Slide
@@ -35,6 +42,13 @@ GRAY = RGBColor(120, 120, 120)
 BODY_LEFT_INCHES = 1.0
 BODY_TOP_INCHES = 2.0
 BULLET_SPACING_PT = 8
+
+CHART_TYPE_MAP = {
+    "column": XL_CHART_TYPE.COLUMN_CLUSTERED,
+    "bar": XL_CHART_TYPE.BAR_CLUSTERED,
+    "line": XL_CHART_TYPE.LINE,
+    "pie": XL_CHART_TYPE.PIE,
+}
 
 
 def _hex_to_rgb(hex_str: str) -> RGBColor:
@@ -224,6 +238,53 @@ class PptxSlideRepository(SlideRepository):
             text_run.font.size = Pt(FONT_SIZE_BULLET)
             text_run.font.color.rgb = text_color
 
+    def _add_chart_to_slide(
+        self, slide: object, chart_data: dict, accent: RGBColor,
+    ) -> None:
+        chart_type_str = chart_data.get("chart_type", "column")
+        if chart_type_str not in SUPPORTED_CHART_TYPES:
+            chart_type_str = "column"
+        xl_chart_type = CHART_TYPE_MAP[chart_type_str]
+
+        categories = chart_data.get("categories", [])
+        series_list = chart_data.get("series", [])
+        if not categories or not series_list:
+            return
+
+        data = CategoryChartData()
+        data.categories = categories
+        for s in series_list:
+            data.add_series(s.get("name", ""), s.get("values", []))
+
+        chart_shape = slide.shapes.add_chart(  # type: ignore[attr-defined]
+            xl_chart_type,
+            Inches(PPTX_CHART_LEFT_INCHES),
+            Inches(PPTX_CHART_TOP_INCHES),
+            Inches(PPTX_CHART_WIDTH_INCHES),
+            Inches(PPTX_CHART_HEIGHT_INCHES),
+            data,
+        )
+
+        chart = chart_shape.chart
+        chart.has_legend = len(series_list) > 1
+        chart_title = chart_data.get("title", "")
+        if chart_title:
+            chart.has_title = True
+            chart.chart_title.text_frame.paragraphs[0].text = chart_title
+
+        for i, s in enumerate(chart.series):
+            r, g, b = accent
+            s.format.fill.solid()
+            if i == 0:
+                s.format.fill.fore_color.rgb = RGBColor(r, g, b)
+            else:
+                factor = 0.6 + (i * 0.15)
+                s.format.fill.fore_color.rgb = RGBColor(
+                    min(int(r * factor), 255),
+                    min(int(g * factor), 255),
+                    min(int(b * factor), 255),
+                )
+
     def _add_content_slide(
         self, prs: Presentation, slide_entity: Slide,
         accent: RGBColor, text_color: RGBColor, bg_color: RGBColor,
@@ -232,11 +293,13 @@ class PptxSlideRepository(SlideRepository):
         self._set_slide_bg(slide, bg_color)
         self._add_accent_bar(slide, accent, top=True, bottom=True)
 
-        has_image = bool(slide_entity.image_data)
-        text_w = Inches(PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES) if has_image else Inches(PPTX_TEXT_WIDTH_DEFAULT_INCHES)
+        has_visual = bool(slide_entity.image_data) or slide_entity.has_chart()
+        text_w = Inches(PPTX_TEXT_WIDTH_WITH_IMAGE_INCHES) if has_visual else Inches(PPTX_TEXT_WIDTH_DEFAULT_INCHES)
 
         self._add_slide_header(slide, slide_entity, accent, text_color)
         self._add_slide_body(slide, slide_entity, text_w, accent, text_color)
 
-        if has_image and slide_entity.image_data:
+        if slide_entity.has_chart() and slide_entity.chart_data:
+            self._add_chart_to_slide(slide, slide_entity.chart_data, accent)
+        elif slide_entity.image_data:
             self._add_image_to_slide(slide, slide_entity.image_data)

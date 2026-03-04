@@ -1,9 +1,13 @@
 import base64
 import io
+import logging
 
+import matplotlib
+import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw, ImageFont
 
 from backend.src.constants.slide import (
+    SUPPORTED_CHART_TYPES,
     PREVIEW_ACCENT_BAR,
     PREVIEW_ACCENT_LINE_W,
     PREVIEW_BULLET_INDENT,
@@ -28,10 +32,15 @@ from backend.src.domain.repositories.slide.slide_preview_repository import (
     SlidePreviewRepository,
 )
 
+matplotlib.use("Agg")
+logger = logging.getLogger(__name__)
+
 DEFAULT_COLOR_WHITE = (255, 255, 255)
 DEFAULT_COLOR_DARK = (50, 50, 50)
 DEFAULT_COLOR_ORANGE = (240, 130, 40)
 COLOR_LIGHT_GRAY = (180, 180, 180)
+CHART_SIZE = 520
+CHART_MARGIN = 40
 
 FONT_PATH_BOLD = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
 FONT_PATH_REGULAR = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
@@ -240,6 +249,73 @@ def _draw_slide_body(
         y += 10
 
 
+def _render_chart_image(
+    chart_data: dict, accent: tuple[int, int, int],
+) -> Image.Image | None:
+    chart_type = chart_data.get("chart_type", "column")
+    if chart_type not in SUPPORTED_CHART_TYPES:
+        chart_type = "column"
+    categories = chart_data.get("categories", [])
+    series_list = chart_data.get("series", [])
+    if not categories or not series_list:
+        return None
+
+    accent_norm = tuple(c / 255.0 for c in accent)
+    dpi = 100
+    fig_size = CHART_SIZE / dpi
+    fig, ax = plt.subplots(figsize=(fig_size, fig_size), dpi=dpi)
+
+    try:
+        if chart_type == "pie":
+            values = series_list[0].get("values", [])
+            ax.pie(values, labels=categories, autopct="%1.0f%%", startangle=90)
+        elif chart_type == "bar":
+            import numpy as np
+            y_pos = np.arange(len(categories))
+            bar_h = 0.8 / len(series_list)
+            for i, s in enumerate(series_list):
+                ax.barh(y_pos + i * bar_h, s.get("values", []), bar_h,
+                        label=s.get("name", ""), alpha=0.8 + i * 0.05)
+            ax.set_yticks(y_pos + bar_h * (len(series_list) - 1) / 2)
+            ax.set_yticklabels(categories)
+        elif chart_type == "line":
+            for s in series_list:
+                ax.plot(categories, s.get("values", []), marker="o", label=s.get("name", ""))
+        else:
+            import numpy as np
+            x_pos = np.arange(len(categories))
+            bar_w = 0.8 / len(series_list)
+            for i, s in enumerate(series_list):
+                ax.bar(x_pos + i * bar_w, s.get("values", []), bar_w,
+                       label=s.get("name", ""), alpha=0.8 + i * 0.05)
+            ax.set_xticks(x_pos + bar_w * (len(series_list) - 1) / 2)
+            ax.set_xticklabels(categories, fontsize=8)
+
+        chart_title = chart_data.get("title", "")
+        if chart_title:
+            ax.set_title(chart_title, fontsize=11)
+        if len(series_list) > 1 and chart_type != "pie":
+            ax.legend(fontsize=8)
+
+        fig.tight_layout()
+        buf = io.BytesIO()
+        fig.savefig(buf, format="PNG", bbox_inches="tight", facecolor="white")
+        buf.seek(0)
+        return Image.open(buf).convert("RGBA")
+    except Exception:
+        logger.warning("Failed to render chart preview", exc_info=True)
+        return None
+    finally:
+        plt.close(fig)
+
+
+def _place_chart_on_slide(base: Image.Image, chart_img: Image.Image) -> None:
+    chart_img = chart_img.resize((CHART_SIZE, CHART_SIZE), Image.LANCZOS)
+    x = PREVIEW_WIDTH - PREVIEW_MARGIN_X - CHART_SIZE
+    y = (PREVIEW_HEIGHT - CHART_SIZE) // 2
+    base.paste(chart_img, (x, y), chart_img)
+
+
 def _render_content_slide(
     slide: dict, index: int,
     accent: tuple[int, int, int], text_color: tuple[int, int, int],
@@ -247,12 +323,19 @@ def _render_content_slide(
 ) -> bytes:
     img, draw = _create_base(accent, bg)
     image_data = slide.get("image_data", "")
-    has_image = bool(image_data)
+    chart_data = slide.get("chart_data")
+    has_chart = bool(chart_data)
+    has_image = bool(image_data) and not has_chart
+    has_visual = has_chart or has_image
 
     y = _draw_slide_header(draw, slide, index, accent, text_color)
-    _draw_slide_body(draw, slide, y, has_image, accent, text_color)
+    _draw_slide_body(draw, slide, y, has_visual, accent, text_color)
 
-    if has_image:
+    if has_chart:
+        chart_img = _render_chart_image(chart_data, accent)
+        if chart_img:
+            _place_chart_on_slide(img, chart_img)
+    elif has_image:
         _decode_and_place_image(img, image_data)
 
     return _image_to_bytes(img)

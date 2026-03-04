@@ -28,6 +28,7 @@ class GenerateSlideUseCase:
                 subtitle=s.get("subtitle"),
                 bullet_points=tuple(s.get("bullet_points", [])),
                 image_data=s.get("image_data"),
+                chart_data=s.get("chart_data"),
             )
             for s in slides_data
         )
