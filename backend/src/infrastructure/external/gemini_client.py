@@ -18,7 +18,12 @@ from backend.src.constants.prompts import (
     CHART_DATA_INSTRUCTIONS,
     REVISE_SINGLE_SLIDE_PROMPT,
 )
-from backend.src.constants.slide import DEFAULT_CATEGORY, GEMINI_MODEL_NAME, IMAGEN_MODEL_NAME
+from backend.src.constants.slide import (
+    DEFAULT_CATEGORY,
+    GEMINI_MODEL_NAME,
+    IMAGEN_MODEL_NAME,
+    IMAGEN_SAFETY_FILTER_LEVEL,
+)
 from backend.src.domain.commons.result import Result, failure, success
 from backend.src.domain.repositories.slide.ai_slide_repository import AiSlideRepository
 
@@ -134,7 +139,7 @@ class GeminiAiSlideRepository(AiSlideRepository):
                 prompt=prompt,
                 config=types.GenerateImagesConfig(
                     number_of_images=1,
-                    safety_filter_level="BLOCK_LOW_AND_ABOVE",
+                    safety_filter_level=IMAGEN_SAFETY_FILTER_LEVEL,
                 ),
             )
         except Exception as e:
