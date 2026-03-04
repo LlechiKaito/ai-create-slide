@@ -166,26 +166,25 @@ aws ssm put-parameter --name "/slide-gen/dev/gemini-api-key" --type SecureString
 cd infra
 npm install
 
-# 3. バックエンドをデプロイ（Lambda Function URL を取得）
-npx cdk deploy SlideGen-dev-Api --context env=dev
-
-# 4. 出力された BackendUrl を確認し、フロントエンドをビルド
+# 3. フロントエンドをビルド
 cd ../frontend
-VITE_API_URL=https://xxxxxxxxxx.lambda-url.ap-northeast-1.on.aws npm run build
+npm run build
 
-# 5. フロントエンドをデプロイ
+# 4. 全スタックをデプロイ
 cd ../infra
-npx cdk deploy SlideGen-dev-Frontend --context env=dev
+npx cdk deploy --all --context env=dev
 ```
+
+API URL はデプロイ時に CDK が `runtime-config.json` として S3 に自動配置します。フロントエンドはアプリ起動時にこのファイルを読み込み、Lambda Function URL を取得します。
 
 ### 環境別デプロイ
 
 ```bash
 # dev 環境（Lambda 512MB）
-npx cdk deploy --all --context env=dev
+cd frontend && npm run build && cd ../infra && npx cdk deploy --all --context env=dev
 
 # prod 環境（Lambda 1024MB）
-npx cdk deploy --all --context env=prod
+cd frontend && npm run build && cd ../infra && npx cdk deploy --all --context env=prod
 ```
 
 ### GEMINI_API_KEY の設定（SSM Parameter Store）
