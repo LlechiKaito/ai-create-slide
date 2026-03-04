@@ -9,6 +9,7 @@ import type { EnvironmentConfig } from "../../config/environments";
 
 interface FrontendStackProps extends cdk.StackProps {
   config: EnvironmentConfig;
+  apiUrl: string;
 }
 
 export class FrontendStack extends cdk.Stack {
@@ -64,6 +65,17 @@ export class FrontendStack extends cdk.Stack {
       destinationBucket: siteBucket,
       distribution: this.distribution,
       distributionPaths: ["/*"],
+    });
+
+    new s3deploy.BucketDeployment(this, "DeployRuntimeConfig", {
+      sources: [
+        s3deploy.Source.jsonData("runtime-config.json", {
+          apiUrl: props.apiUrl,
+        }),
+      ],
+      destinationBucket: siteBucket,
+      distribution: this.distribution,
+      distributionPaths: ["/runtime-config.json"],
     });
 
     new cdk.CfnOutput(this, "DistributionDomainName", {

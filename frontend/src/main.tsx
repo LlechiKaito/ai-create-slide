@@ -3,9 +3,12 @@ import { createRoot } from "react-dom/client";
 
 import "@/styles/index.css";
 import App from "@/App.tsx";
+import { loadRuntimeConfig } from "@/utils/load-runtime-config";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+loadRuntimeConfig().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+});
