@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from backend.src.constants.slide import (
     DEFAULT_CATEGORY,
@@ -68,6 +68,11 @@ class AiSlideContentDto(BaseModel):
     image_prompt: str = ""
     image_data: str = ""
     chart_data: dict | None = None
+
+    @field_validator("subtitle", "content", "image_prompt", "image_data", mode="before")
+    @classmethod
+    def none_to_empty_string(cls, v: object) -> object:
+        return "" if v is None else v
 
 
 class AiGenerateResponseDto(BaseModel):
