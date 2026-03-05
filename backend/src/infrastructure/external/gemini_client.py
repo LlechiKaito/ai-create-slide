@@ -20,9 +20,9 @@ from backend.src.constants.prompts import (
 )
 from backend.src.constants.slide import (
     DEFAULT_CATEGORY,
+    GEMINI_IMAGE_ASPECT_RATIO,
+    GEMINI_IMAGE_MODEL_NAME,
     GEMINI_MODEL_NAME,
-    IMAGEN_MODEL_NAME,
-    IMAGEN_SAFETY_FILTER_LEVEL,
 )
 from backend.src.domain.commons.result import Result, failure, success
 from backend.src.domain.repositories.slide.ai_slide_repository import AiSlideRepository
@@ -131,25 +131,32 @@ class GeminiAiSlideRepository(AiSlideRepository):
         return success(parsed)
 
     def generate_image(self, prompt: str) -> Result[bytes, Exception]:
-        logger.info("Imagen API call start: model=%s, prompt=%s", IMAGEN_MODEL_NAME, prompt[:80])
+        logger.info("Gemini image generation start: model=%s, prompt=%s", GEMINI_IMAGE_MODEL_NAME, prompt[:80])
         try:
             client = self._get_client()
-            response = client.models.generate_images(
-                model=IMAGEN_MODEL_NAME,
-                prompt=prompt,
-                config=types.GenerateImagesConfig(
-                    number_of_images=1,
-                    safety_filter_level=IMAGEN_SAFETY_FILTER_LEVEL,
+            response = client.models.generate_content(
+                model=GEMINI_IMAGE_MODEL_NAME,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    image_config=types.ImageConfig(
+                        aspect_ratio=GEMINI_IMAGE_ASPECT_RATIO,
+                    ),
                 ),
             )
         except Exception as e:
-            logger.error("Imagen API exception: %s: %s", type(e).__name__, e)
+            logger.error("Gemini image generation exception: %s: %s", type(e).__name__, e)
             return failure(e)
 
-        if not response.generated_images:
-            logger.warning("Imagen API returned no images for prompt: %s", prompt[:80])
+        if not response.candidates or not response.candidates[0].content.parts:
+            logger.warning("Gemini image generation returned no image for prompt: %s", prompt[:80])
             return failure(Exception("No image generated"))
 
-        image_bytes = response.generated_images[0].image.image_bytes
-        logger.info("Imagen API success: %d bytes", len(image_bytes))
-        return success(image_bytes)
+        for part in response.candidates[0].content.parts:
+            if part.inline_data:
+                image_bytes = part.inline_data.data
+                logger.info("Gemini image generation success: %d bytes", len(image_bytes))
+                return success(image_bytes)
+
+        logger.warning("Gemini image generation returned no inline_data for prompt: %s", prompt[:80])
+        return failure(Exception("No image data in response"))
