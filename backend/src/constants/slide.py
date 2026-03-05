@@ -77,7 +77,7 @@ PIL_FONT_MAP = {
 }
 
 GEMINI_MODEL_NAME = "gemini-2.5-flash"
-GEMINI_IMAGE_MODEL_NAME = "gemini-2.5-flash-preview-image-generation"
+GEMINI_IMAGE_MODEL_NAME = "gemini-2.5-flash-image"
 GEMINI_IMAGE_ASPECT_RATIO = "3:4"
 
 SLIDE_CATEGORIES = {
